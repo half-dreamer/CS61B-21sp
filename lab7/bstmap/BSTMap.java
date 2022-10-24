@@ -6,7 +6,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
-    Node root = null;
+    private Node root = null;
 
     // nested class Node presenting the node in the BST
     private class Node {
