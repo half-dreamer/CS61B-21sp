@@ -113,4 +113,12 @@ public class TestBSTMapExtra {
         assertEquals(null, noChild.get('Z'));
     }
 
+    @Test
+    public void testfindMinNode() {
+         BSTMap<Character,Integer> testTree = new BSTMap();
+         testTree.put('C',1) ;
+         testTree.put('B', 2 );
+         testTree.put('A', 3);
+         assertEquals((long)testTree.findMinNode(testTree.root).key,(long)'A');
+    }
 }

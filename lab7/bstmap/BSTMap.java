@@ -1,6 +1,7 @@
 package bstmap;
 
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -65,25 +66,27 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
         }
     }
 
+    public Node getToNode (K key,Node curNode) {
+        if (curNode.key.compareTo(key) == 0) {
+            return curNode;
+        } else if  (curNode.key.compareTo(key) > 0 ) {
+            return getToNode(key,curNode.left);
+        } else {
+            return getToNode(key,curNode.right);
+        }
+
+    }
+
     @Override
     public V get(K key) {
-        return get(key,root);
+        if (! containsKey(key)) {
+            return null;
+        } else {
+            return getToNode(key,root).value;
+        }
     }
 // assume the node(a.k.a the tree) have the key and according value
-    public V get(K key,Node node) {
-        if (node==null){
-            return null;
-        }
-        if (key.compareTo(node.key) ==0 ) {
-            return node.value;
-        } else {
-            if (key.compareTo(node.key) < 0) {
-                return get(key,node.left);
-            } else {
-                return get(key,node.right);
-            }
-        }
-    }
+
 
     public  boolean isLeaf(Node node) {
         return node.left == null && node.right == null;
@@ -104,45 +107,75 @@ public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
 
     @Override
     public V remove(K key) {
-        throw new UnsupportedOperationException();
+        V value = get(key);
+        root = remove(key,root);
+        return  value;
     }
 
     @Override
     public V remove(K key, V value) {
-        if (!containsKey(key)) {
-            return null;
-        } else {
-            Node curNode = findNode(key,root);
-            if (isLeaf(curNode) ) {
-
-            }
-        }
-    }
-
-   public  Node findRemovedNode(K key, Node node) {
-
+        return remove(key);
    }
 
-    public Node findNode(K key, Node node) {
-        if (node.key == key) {
-            return  node;
-        } else {
-            cmp = key.compareTo(node.key);
-            if (cmp <= 0) {
-                return findNode(key,node.left);
-            } else {
-                return findNode(key,node.right);
-            }
-        }
-    }
+   /* this method get a curNode (tree) and return a node(tree) which have complete the remove function */
+   public Node remove(K key,Node curNode) {
+        if (curNode == null) {
+            return null;
+        } else if (curNode.key.compareTo(key) == 0){
+           // this is the base case and we find the target node
+               if (isLeaf(curNode)) {
+                   return null;
+                   //no child case
+               } else if (curNode.left == null) {
+                   return curNode.right;
+               } else if (curNode.right == null ) {
+                   return curNode.left;
+               } else {
+                   Node substituter = findMinNode(curNode.right);
+                   curNode.key = substituter.key;
+                   curNode.value = substituter.value;
+                   curNode.right = remove(substituter.key,curNode.right);
+                   return curNode;
+           }
+       }
+        else {
+           if (curNode.key.compareTo(key) > 0) {
+               curNode.left = remove(key, curNode.left);
+           } else if (curNode.key.compareTo(key) < 0) {
+               curNode.right = remove(key, curNode.right);
+           }
+       }
+        return curNode;
+   }
+
+   public Node findMinNode (Node node) {
+       if (node.left == null) {
+           return node;
+       } else {
+           return findMinNode(node.left);
+       }
+   }
+
+
     @Override
     public Iterator iterator() {
-        throw new UnsupportedOperationException();
+        return keySet().iterator();
     }
 
     @Override
     public Set keySet() {
-        throw new UnsupportedOperationException();
+        Set keySet = new HashSet();
+        addKey(root,keySet);
+        return keySet;
+    }
+
+    public void addKey (Node n,Set keySet) {
+        if (n == null) {
+        } else {
+            keySet.add(n.key);
+            addKey(n.left,keySet);
+            addKey(n.right,keySet);
+        }
     }
 
 
