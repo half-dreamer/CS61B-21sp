@@ -53,8 +53,7 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
     public MyHashMap(int initialSize, double maxLoad) {
         bucketsSize = initialSize;
         loadFactor = maxLoad;
-        buckets = createTable(initialSize);
-    }
+        buckets = createTable(initialSize); }
 
     /**
      * Returns a new node to be placed in a hash table bucket
@@ -132,15 +131,19 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
     }
 
 
-    @Override
-    public V get(K key) {
+    private Node getNode (K key) {
         int Hash = getHashIndex(key);
         for (Node n: buckets[Hash]) {
             if (n.key.equals(key)) {
-                return n.value;
+                return n;
             }
         }
         return null;
+    }
+
+    @Override
+    public V get(K key) {
+        return getNode(key).value;
     }
 
     @Override
@@ -164,25 +167,50 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
             bucket.add(new Node(key, value));
             itemSize ++;
         }
+        resize();
     }
+
+    private void resize() {
+        if (itemSize / bucketsSize >= loadFactor) {
+            bucketsSize = bucketsSize * 4;
+            Collection<Node>[] newBuckets = createTable(bucketsSize);
+            for (Collection<Node> bucket: buckets) {
+                 for (Node n : bucket) {
+                      int Hash = getHashIndex(n.key);
+                      newBuckets[Hash].add(n);
+                 }
+            }
+            buckets = newBuckets;
+        }
+    }
+
 
     @Override
     public Set<K> keySet() {
-        throw new UnsupportedOperationException();
+        Set<K> keySet = new HashSet<>();
+        for (Collection<Node> bucket : buckets) {
+            for (Node node : bucket) {
+                keySet.add(node.key) ;
+            }
+        }
+        return keySet;
     }
 
     @Override
     public Iterator<K> iterator() {
-        throw new UnsupportedOperationException();
+        return keySet().iterator();
     }
 
     @Override
     public V remove(K key, V value) {
-        throw new UnsupportedOperationException();
+        return remove(key);
     }
 
     @Override
     public V remove(K key) {
-        throw new UnsupportedOperationException();
+        int Hash = getHashIndex(key);
+         Node removedNode = getNode(key);
+         buckets[Hash].remove(removedNode);
+         return removedNode.value;
     }
 }
