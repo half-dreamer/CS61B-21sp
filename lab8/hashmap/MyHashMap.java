@@ -59,7 +59,7 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
      * Returns a new node to be placed in a hash table bucket
      */
     private int getHashIndex(K key) {
-        return Math.floorMod(key.hashCode(),11);
+        return Math.floorMod(key.hashCode(),bucketsSize);
     }
     private Node createNode(K key, V value) {
         Node insertNode = new Node(key,value);
@@ -131,7 +131,7 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
     }
 
 
-    public Node getNode (K key) {
+    private Node getNode (K key) {
         int Hash = getHashIndex(key);
         for (Node n: buckets[Hash]) {
             if (n.key.equals(key)) {
@@ -172,7 +172,7 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
             bucket.add(new Node(key, value));
             itemSize ++;
         }
-
+        resize();
     }
 
     private void resize() {
