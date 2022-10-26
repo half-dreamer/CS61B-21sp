@@ -28,9 +28,9 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
 
     /* Instance Variables */
     private Collection<Node>[] buckets;
-    public int bucketsSize = 16;
-    public double loadFactor = 0.75;
-    public int itemSize = 0;
+    private int bucketsSize = 16;
+    private double loadFactor = 0.75;
+    private int itemSize = 0;
     // You should probably define some more!
 
     /** Constructors */
@@ -58,8 +58,8 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
     /**
      * Returns a new node to be placed in a hash table bucket
      */
-    public int getHashIndex(K key) {
-        return Math.floorMod(key.hashCode(),bucketsSize);
+    private int getHashIndex(K key) {
+        return Math.floorMod(key.hashCode(),11);
     }
     private Node createNode(K key, V value) {
         Node insertNode = new Node(key,value);
@@ -131,7 +131,7 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
     }
 
 
-    private Node getNode (K key) {
+    public Node getNode (K key) {
         int Hash = getHashIndex(key);
         for (Node n: buckets[Hash]) {
             if (n.key.equals(key)) {
@@ -143,7 +143,12 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
 
     @Override
     public V get(K key) {
-        return getNode(key).value;
+        Node node = getNode(key);
+        if (node == null ) {
+            return null;
+        } else {
+            return node.value;
+        }
     }
 
     @Override
@@ -167,7 +172,7 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
             bucket.add(new Node(key, value));
             itemSize ++;
         }
-        resize();
+
     }
 
     private void resize() {

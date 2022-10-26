@@ -5,6 +5,7 @@ import org.junit.Test;
 
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -159,4 +160,15 @@ public class TestMyHashMap {
         assertEquals(345, studentIDs.get("evil alan").intValue());
         assertEquals(studentIDs.get("evil alan"), studentIDs.get("alan"));
     }
+
+    @Test
+    public void testgetNode () {
+        MyHashMap<String, Integer> b = new MyHashMap<>();
+        b.put("a",1);
+        b.put("b",2);
+        assertEquals("a",b.getNode("a").key);
+        assertEquals((long)1,(long)b.getNode("a").value);
+
+    }
+
 }
