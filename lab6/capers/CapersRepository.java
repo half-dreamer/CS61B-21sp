@@ -1,10 +1,14 @@
 package capers;
 
+import javax.imageio.IIOException;
 import java.io.File;
+import java.io.IOException;
+
+import static capers.Dog.DOG_FOLDER;
 import static capers.Utils.*;
 
 /** A repository for Capers 
- * @author TODO
+ * @author HalfDream
  * The structure of a Capers Repository is as follows:
  *
  * .capers/ -- top level folder for all persistent data in your lab12 folder
@@ -18,12 +22,13 @@ public class CapersRepository {
     static final File CWD = new File(System.getProperty("user.dir"));
 
     /** Main metadata folder. */
-    static final File CAPERS_FOLDER = null; // TODO Hint: look at the `join`
+    static final File CAPERS_FOLDER = join(CWD,".capers"); // TODO Hint: look at the `join`
                                             //      function in Utils
+    static File STORY_FILE;
 
     /**
      * Does required filesystem operations to allow for persistence.
-     * (creates any necessary folders or files)
+     * (symotion-prefix)creates any necessary folders or files)
      * Remember: recommended structure (you do not have to follow):
      *
      * .capers/ -- top level folder for all persistent data in your lab12 folder
@@ -32,6 +37,14 @@ public class CapersRepository {
      */
     public static void setupPersistence() {
         // TODO
+        CAPERS_FOLDER.mkdirs();
+        DOG_FOLDER.mkdirs();
+        STORY_FILE = join(CAPERS_FOLDER,"story");
+        try {
+            STORY_FILE.createNewFile();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -41,6 +54,13 @@ public class CapersRepository {
      */
     public static void writeStory(String text) {
         // TODO
+        String originalText = readContentsAsString(STORY_FILE);
+        if (STORY_FILE.exists()) {
+            writeContents(STORY_FILE, originalText + text + "\n");
+            System.out.println(readContentsAsString(STORY_FILE));
+        } else {
+            System.out.println("STORY_FILE doesn't exist!");
+        }
     }
 
     /**
@@ -50,6 +70,9 @@ public class CapersRepository {
      */
     public static void makeDog(String name, String breed, int age) {
         // TODO
+        Dog newDog = new Dog(name,breed,age);
+        newDog.saveDog();
+        System.out.println(newDog.toString());
     }
 
     /**
@@ -60,5 +83,7 @@ public class CapersRepository {
      */
     public static void celebrateBirthday(String name) {
         // TODO
+        Dog readInDog = Dog.fromFile(name);
+        readInDog.haveBirthday();
     }
 }
