@@ -18,6 +18,8 @@ import java.util.Arrays;
 import java.util.Formatter;
 import java.util.List;
 
+import static gitlet.Repository.*;
+
 
 /** Assorted utilities.
  *
@@ -236,4 +238,60 @@ class Utils {
         System.out.printf(msg, args);
         System.out.println();
     }
+    static Commit getCommitFromPointer(String PointerName) {
+        File CommitPointerFile = join(POINTERS_DIR,PointerName);
+        String readCommitSha1 = readObject(CommitPointerFile,String.class);
+        File readCommitFile = join(COMMIT_DIR,readCommitSha1);
+        return readObject(readCommitFile,Commit.class);
+    }
+    static void unstageAddStageFile(String toBeUnstagedFile) {
+        restrictedDelete(join(ADDSTAGE_DIR,toBeUnstagedFile)); //unstage file in AddStage
+    }
+    static void showCommitInfo(Commit toBeShowedCommit) {
+        System.out.println("===");
+        System.out.println("commit " + toBeShowedCommit.getCurSha1());
+        if (toBeShowedCommit.isHasMutiplePars()) {
+            // if this commit has multiple parents
+            System.out.print("Merge: " + toBeShowedCommit.getCurSha1().substring(0,7));
+            for (String mergedInParSha1 : toBeShowedCommit.getMergedInParSha1s()) {
+                System.out.print(" " + mergedInParSha1);
+            }
+            System.out.println();
+        }
+        System.out.println("Date: " + toBeShowedCommit.DateInString());
+        System.out.println(toBeShowedCommit.getMessage());
+        System.out.println();
+    }
+
+    static void printBranches() {
+        System.out.println("=== Branches ===");
+        Commit curCommit = getCommitFromPointer("HEAD");
+        String curBranch = curCommit.getInBranch();
+        System.out.println("*" + curBranch);
+        for (String Branch : plainFilenamesIn(POINTERS_DIR)) {
+            if (Branch.equals(curBranch) || Branch.equals("HEAD")) {
+                continue;
+            } else {
+                System.out.println(Branch);
+            }
+        }
+        System.out.println();
+    }
+
+    static void printStagedFiles() {
+        System.out.println("=== Staged Files ===");
+        for (String AddStageFileName : plainFilenamesIn(ADDSTAGE_DIR)) {
+            System.out.println(AddStageFileName);
+        }
+        System.out.println();
+    }
+
+    static void printRemovedFiles() {
+        System.out.println("=== Removed Files ===");
+        for (String removedFileName : plainFilenamesIn(RMSTAGE_DIR)) {
+            System.out.println(removedFileName);
+        }
+        System.out.println();
+    }
+
 }

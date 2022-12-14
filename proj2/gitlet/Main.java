@@ -27,13 +27,30 @@ public class Main {
                 break;
             // TODO: FILL THE REST IN
             case "commit":    //usage : java gitlet.Main commit [message]
-                if (args.length == 1) {
-                    throw Utils.error("Please enter a commit message.");
+                if (args[1].equals("")) {
+                    System.out.println("Please enter a commit message.");
+                    System.exit(1);
                 }
                 String commitMessage = args[1];
                 Repository.CommitCommand(commitMessage);
                 break;
-
+            case "rm":
+                String rmFileName = args[1];
+                Repository.rmCommand(rmFileName);
+                break;
+            case "log":
+                Repository.logCommand();
+                break;
+            case "global-log":
+                Repository.globalLogCommand();
+                break;
+            case "find":
+                String findByMessage = args[1];
+                Repository.findCommand(findByMessage);
+                break;
+            case "status":
+                Repository.statusCommand();
+                break;
         }
     }
 }

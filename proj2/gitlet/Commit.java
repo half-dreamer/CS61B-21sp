@@ -7,10 +7,7 @@ import jdk.jshell.execution.Util;
 import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date; // TODO: You'll likely use this in this class
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /** Represents a gitlet commit object.
  *  TODO: It's a good idea to give a description here of what else this Class
@@ -31,24 +28,63 @@ public class Commit implements Serializable {
     private String message;
     private String curSha1;
     private String parSha1;
-    private Map<String,String> containingBlobs = new HashMap<>(); // Map<blob,Sha1> e.g. {"Hello.txt","0e93cac"}
-    DateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+    private Map<String,String> containingBlobs; // Map<fileName,Blob.Sha1> e.g. {"Hello.txt","0e93cac"}
+    private String inBranch;
     Date timeStamp;
+    DateFormat df = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z");
+    private List<String> mergedInParSha1 = new ArrayList<>();
+    private boolean hasMutiplePars = false;
 
     /* TODO: fill in the rest of this class. */
     public Commit() {
         timeStamp = new Date(0);
         parSha1  = ""; // note : parSha1 is not null,instead,an empty String.For later execution of Sha1
         message = "initial commit";
+        containingBlobs = new HashMap<>(); // Map<fileName,Blob.Sha1> e.g. {"Hello.txt","0e93cac"}
         curSha1 = Utils.sha1(message,parSha1,containingBlobs.toString(),df.format(timeStamp));
+        inBranch = "Master";
     }
-    public Commit(String message,String parSha1,Date timeStamp) {
+    public Commit(String message,String parSha1,Map<String,String> containingBlobs,String parInBranch) {
         this.message = message;
         this.parSha1 = parSha1;
-        this.timeStamp = timeStamp;
+        this.timeStamp = new Date();
+        this.containingBlobs = containingBlobs;
+        this.curSha1 = Utils.sha1(message,parSha1,containingBlobs.toString(),df.format(timeStamp));
+        this.inBranch = parInBranch;
     }
 
     String getCurSha1() {
         return this.curSha1;
+    }
+
+    public Map<String, String> getContainingBlobs() {
+        return containingBlobs;
+    }
+
+    public Date getTimeStamp() {
+        return timeStamp;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public String getParSha1() {
+        return parSha1;
+    }
+
+    public String getInBranch() {
+        return inBranch;
+    }
+
+    public List<String> getMergedInParSha1s() {
+        return mergedInParSha1;
+    }
+
+    public boolean isHasMutiplePars() {
+        return hasMutiplePars;
+    }
+    public String DateInString() {
+        return df.format(this.timeStamp);
     }
 }
