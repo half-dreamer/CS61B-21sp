@@ -1,10 +1,10 @@
 package gitlet;
 
 import edu.princeton.cs.algs4.StdIn;
-import jdk.jshell.execution.Util;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -38,7 +38,7 @@ public class Repository {
     public static final File BLOB_DIR = join(GITLET_DIR,"Blobs");
     public static final File POINTERS_DIR = join(GITLET_DIR,"CommitPointers");
     public static final File HEAD_FILE = join(POINTERS_DIR,"HEAD");
-    public static final File Master_FILE = join(POINTERS_DIR,"Master");
+    public static final File Master_FILE = join(POINTERS_DIR,"master");
     public static final File ADDSTAGE_DIR = join(GITLET_DIR,"AddStage");
     public static final File RMSTAGE_DIR = join(GITLET_DIR,"RmStage");
 /**
@@ -51,7 +51,8 @@ public class Repository {
      *                  >blob (file)
      *         CommitPointers(folder)
      *                  >Commit(filename:Pointer Name, content: commit sha1 the pointer point at)
-     *                  >e.g. (filename:HEAD,content :some commit sha1)
+     *                  >e.g. note: Special case : filename:HEAD content
+     *                  >e.g. (filename:master,content :some commit sha1)
      *         AddStage(folder)
      *                  >StagedFile (fliename: added file name , content: StagedFile(Object) (which has pointed Blob's Sha1 )
      *         RmStage(folder)
@@ -72,9 +73,9 @@ public class Repository {
         RMSTAGE_DIR.mkdir();
         Commit initCommit = new Commit();
         writeObject(join(COMMIT_DIR,initCommit.getCurSha1()),initCommit);
-        String HEAD = initCommit.getCurSha1();
-        writeObject(HEAD_FILE,HEAD);
-        writeObject(Master_FILE,HEAD);
+        String master = initCommit.getCurSha1();
+        writeObject(HEAD_FILE,"master");
+        writeObject(Master_FILE,master);
     }
 
     static void AddCommand(String AddedFileName) {
@@ -116,7 +117,6 @@ public class Repository {
         //  2.create the right newCommit with correct timestamp,parent etc.(done)
         //  3.write the newCommit to the Commits Folder.(done)
         //  4.update the branches(done)
-        //  5.clear the AddStage and RemoveStage
         Commit prevCommit = Utils.getCommitFromPointer("HEAD");
         String parSha1 = prevCommit.getCurSha1();
         Map<String,String> newCommitContainingBlobs = prevCommit.getContainingBlobs(); //not updated
@@ -124,8 +124,7 @@ public class Repository {
         List<String> addStageFilesList = Utils.plainFilenamesIn(ADDSTAGE_DIR);
         List<String> rmStageFilesList = Utils.plainFilenamesIn(RMSTAGE_DIR);
         if (addStageFilesList.isEmpty() && rmStageFilesList.isEmpty()) {
-            System.out.println("No changes added to the commit.");
-            return ;
+            errorMessage("No changes added to the commit.");
         }
         for (String addFileName : addStageFilesList) {
             StagedFile inAddStageFile = readObject(join(ADDSTAGE_DIR,addFileName), StagedFile.class);
@@ -135,21 +134,13 @@ public class Repository {
             StagedFile inRmStageFile = readObject(join(RMSTAGE_DIR,rmFileName), StagedFile.class);
             newCommitContainingBlobs.remove(rmFileName,inRmStageFile.getBolbSha1());
         }
-        Commit newCommit = new Commit(CommitMessage,parSha1,newCommitContainingBlobs,prevCommit.getInBranch());
+        Commit newCommit = new Commit(CommitMessage,parSha1,newCommitContainingBlobs);
         writeObject(join(COMMIT_DIR,newCommit.getCurSha1()),newCommit);//step3
-        writeObject(join(POINTERS_DIR,"HEAD"),newCommit.getCurSha1()); //step4
-        writeObject(join(POINTERS_DIR,newCommit.getInBranch()),newCommit.getCurSha1());
-        if (!(plainFilenamesIn(ADDSTAGE_DIR) == null)) {
-            for (String toDeleteFileName : plainFilenamesIn(ADDSTAGE_DIR)) {
-                join(ADDSTAGE_DIR, toDeleteFileName).delete();
-            }
-        }
-        if (!(plainFilenamesIn(RMSTAGE_DIR) == null)) {
-            for (String toDeleteFileName : plainFilenamesIn(RMSTAGE_DIR)) {
-                join(RMSTAGE_DIR, toDeleteFileName).delete();
-            }
-        }
+        String curBranch = readObject(HEAD_FILE,String.class);
+        writeObject(join(POINTERS_DIR,curBranch),newCommit.getCurSha1());
+        clearTwoStages();
     }
+
 
     static void rmCommand(String rmFileName) {
         boolean isStaged = false;
@@ -219,5 +210,101 @@ public class Repository {
         printModifiedButNotStagedFiles();
         printUntrackedFiles();
     }
+
+    // checkout [branch name]
+    static void checkoutToBranch(String desBranchName) {
+        List<String> branches = plainFilenamesIn(POINTERS_DIR);
+        boolean isTheBranchExisted = false;
+        String desBranchCommitSha1 = "";
+        for (String branch : branches) {
+            if (branch.equals(desBranchName)) {
+                isTheBranchExisted = true;
+                desBranchCommitSha1 = readObject(join(POINTERS_DIR,branch),String.class);
+                break;
+            }
+        }
+        if (!isTheBranchExisted) {
+            errorMessage("No such branch exists.");
+        }
+        if (readObject(HEAD_FILE,String.class).equals(desBranchName)) {
+            errorMessage("No need to checkout the current branch.");
+        }
+        Commit desCommit = readObject(join(COMMIT_DIR,desBranchCommitSha1), Commit.class);
+        String curCommitSha1 = getCommitFromPointer("HEAD").getCurSha1();
+        Commit curCommit = readObject(join(COMMIT_DIR,curCommitSha1), Commit.class);
+        Map<String,String> curCommitContaingBlobs = curCommit.getContainingBlobs();// Map<fileName,Blob.sha1> e.g.{"Hello.txt","0e93"}
+        Map<String,String> desCommitContaingBlobs = desCommit.getContainingBlobs();
+        List<String> untrackedFileNames = new ArrayList<>();
+        for (String workingFileName : plainFilenamesIn(CWD)) {
+            if (!curCommitContaingBlobs.containsKey(workingFileName)) {
+                untrackedFileNames.add(workingFileName);
+            }
+        }
+        for (String untrackFileName : untrackedFileNames) {
+            if (desCommitContaingBlobs.containsKey(untrackFileName)) {
+                errorMessage("There is an untracked file in the way; delete it, or add and commit it first.");
+            }
+        }
+        //delete files tracked in curCommit but untracked in desCommit
+        for (Map.Entry<String,String> entry : curCommitContaingBlobs.entrySet()) {
+            String curFileName = entry.getKey();
+            if (!desCommitContaingBlobs.containsKey(curFileName)) {
+                restrictedDelete(join(CWD,curFileName));
+            }
+        }
+        //overwrite files tracked in the desCommit
+        for (Map.Entry<String,String> entry : desCommitContaingBlobs.entrySet()) {
+            String curBlobSha1 = entry.getValue();
+            Blob curBlob = readObject(join(BLOB_DIR,curBlobSha1), Blob.class);
+            String curBlobFileName = curBlob.getFileName();
+            String curBlobContent = curBlob.getFileContent();
+            writeContents(join(CWD,curBlobFileName),curBlobContent);
+        }
+        //update the HEAD pointer
+        writeObject(HEAD_FILE,desBranchName);
+        //clear stages
+        clearTwoStages();
+    }
+
+    // checkout -- [file name]
+    static void checkoutToHeadWithOneFile(String fileName) {
+        String HeadSha1 = getCommitFromPointer("HEAD").getCurSha1();
+        checkoutToSpecificCommitWithOneFile(HeadSha1,fileName);
+    }
+
+    // checkout [commit id] -- [file name]
+    static void checkoutToSpecificCommitWithOneFile(String desCommitSha1,String fileName){
+        List<String> allCommitSha1s = plainFilenamesIn(COMMIT_DIR);
+        boolean isDesCommitExisted = false;
+        String fullDesCommitSha1 = "";
+        for (String curCommitSha1 : allCommitSha1s) {
+            if (curCommitSha1.startsWith(desCommitSha1)) {
+                isDesCommitExisted = true;
+                fullDesCommitSha1 = curCommitSha1;
+                break;
+            }
+        }
+        if (!isDesCommitExisted) {
+            errorMessage("No commit with that id exists.");
+        }
+        Commit desCommit = readObject(join(COMMIT_DIR,fullDesCommitSha1), Commit.class);
+        String desBlobSha1 = desCommit.getContainingBlobs().get(fileName);
+        if (desBlobSha1 == null) {
+            errorMessage("File does not exist in that commit.");
+        }
+        Blob desBlob = readObject(join(BLOB_DIR,desBlobSha1),Blob.class);
+        writeContents(join(CWD,fileName),desBlob.getFileContent());
+    }
+
+    static void branchCommand(String newBranchName) {
+        List<String> branches = plainFilenamesIn(POINTERS_DIR);
+        if (branches.contains(newBranchName)) {
+            errorMessage("A branch with that name already exists.");
+        } else {
+            String HEADCommitSha1 = getCommitFromPointer("HEAD").getCurSha1();
+            writeObject(join(POINTERS_DIR,newBranchName),HEADCommitSha1);
+        }
+    }
+
 
 }

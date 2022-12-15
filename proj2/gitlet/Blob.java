@@ -4,9 +4,9 @@ import java.io.File;
 import java.io.Serializable;
 
 public class Blob implements Serializable {
-    String fileName;
-    String fileContent;
-    String sha1;
+    private String fileName;
+    private String fileContent;
+    private String sha1;
 
     public Blob(String BlobedFileName, File toBlobedFile) {
         fileContent = Utils.readContentsAsString(toBlobedFile);

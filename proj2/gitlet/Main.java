@@ -1,4 +1,5 @@
 package gitlet;
+import static gitlet.Utils.*;
 
 /** Driver class for Gitlet, a subset of the Git version-control system.
  *  @author HalfDream
@@ -50,6 +51,31 @@ public class Main {
                 break;
             case "status":
                 Repository.statusCommand();
+                break;
+            case "checkout":
+                if (args.length == 2) {
+                    String BranchName = args[1];
+                    Repository.checkoutToBranch(BranchName);
+                }
+                if (args.length == 3) {
+                    if (!args[1].equals("--")) {
+                        IncorrectOperands();
+                    }
+                    String fileName = args[2];
+                    Repository.checkoutToHeadWithOneFile(fileName);
+                }
+                if (args.length == 4) {
+                    String commitSha1 = args[1];
+                    if (!args[2].equals("--")) {
+                        IncorrectOperands();
+                    }
+                    String fileName = args[3];
+                    Repository.checkoutToSpecificCommitWithOneFile(commitSha1,fileName);
+                }
+                break;
+            case "branch":
+                String newBranchName = args[1];
+                Repository.branchCommand(newBranchName);
                 break;
         }
     }

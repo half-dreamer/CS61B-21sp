@@ -29,7 +29,6 @@ public class Commit implements Serializable {
     private String curSha1;
     private String parSha1;
     private Map<String,String> containingBlobs; // Map<fileName,Blob.Sha1> e.g. {"Hello.txt","0e93cac"}
-    private String inBranch;
     Date timeStamp;
     DateFormat df = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z",Locale.ENGLISH);
     private List<String> mergedInParSha1 = new ArrayList<>();
@@ -42,15 +41,13 @@ public class Commit implements Serializable {
         message = "initial commit";
         containingBlobs = new TreeMap<>(); // Map<fileName,Blob.Sha1> e.g. {"Hello.txt","0e93cac"}
         curSha1 = Utils.sha1(message,parSha1,containingBlobs.toString(),df.format(timeStamp));
-        inBranch = "Master";
     }
-    public Commit(String message,String parSha1,Map<String,String> containingBlobs,String parInBranch) {
+    public Commit(String message,String parSha1,Map<String,String> containingBlobs) {
         this.message = message;
         this.parSha1 = parSha1;
         this.timeStamp = new Date();
         this.containingBlobs = containingBlobs;
         this.curSha1 = Utils.sha1(message,parSha1,containingBlobs.toString(),df.format(timeStamp));
-        this.inBranch = parInBranch;
     }
 
     String getCurSha1() {
@@ -73,9 +70,6 @@ public class Commit implements Serializable {
         return parSha1;
     }
 
-    public String getInBranch() {
-        return inBranch;
-    }
 
     public List<String> getMergedInParSha1s() {
         return mergedInParSha1;
@@ -87,4 +81,5 @@ public class Commit implements Serializable {
     public String DateInString() {
         return df.format(this.timeStamp);
     }
+
 }

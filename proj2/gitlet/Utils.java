@@ -202,7 +202,7 @@ class Utils {
     /** Return the concatentation of FIRST and OTHERS into a File designator,
      *  analogous to the {@link java.nio.file.Paths.#get(String, String[])}
      *  method. */
-    static File join(File first, String... others) {
+     static File join(File first, String... others) {
         return Paths.get(first.getPath(), others).toFile();
     }
 
@@ -238,14 +238,23 @@ class Utils {
         System.out.printf(msg, args);
         System.out.println();
     }
+
+    static void errorMessage(String errorMessage) {
+        System.out.println(errorMessage);
+        System.exit(0);
+    }
+
     static Commit getCommitFromPointer(String PointerName) {
+        if (PointerName.equals("HEAD")) {
+            PointerName = readObject(HEAD_FILE,String.class);
+        }
         File CommitPointerFile = join(POINTERS_DIR,PointerName);
         String readCommitSha1 = readObject(CommitPointerFile,String.class);
         File readCommitFile = join(COMMIT_DIR,readCommitSha1);
         return readObject(readCommitFile,Commit.class);
     }
     static void unstageAddStageFile(String toBeUnstagedFile) {
-        restrictedDelete(join(ADDSTAGE_DIR,toBeUnstagedFile)); //unstage file in AddStage
+        join(ADDSTAGE_DIR,toBeUnstagedFile).delete(); //unstage file in AddStage
     }
     static void showCommitInfo(Commit toBeShowedCommit) {
         System.out.println("===");
@@ -266,7 +275,7 @@ class Utils {
     static void printBranches() {
         System.out.println("=== Branches ===");
         Commit curCommit = getCommitFromPointer("HEAD");
-        String curBranch = curCommit.getInBranch();
+        String curBranch = readObject(HEAD_FILE,String.class);
         System.out.println("*" + curBranch);
         if (!(plainFilenamesIn(POINTERS_DIR) == null)) {
             for (String Branch : plainFilenamesIn(POINTERS_DIR)) {
@@ -311,5 +320,21 @@ class Utils {
         System.out.println();
     }
     // TODO:above two method needs to be completed
+    static void clearTwoStages() {
+        if (!(plainFilenamesIn(ADDSTAGE_DIR) == null)) {
+            for (String toDeleteFileName : plainFilenamesIn(ADDSTAGE_DIR)) {
+                join(ADDSTAGE_DIR, toDeleteFileName).delete();
+            }
+        }
+        if (!(plainFilenamesIn(RMSTAGE_DIR) == null)) {
+            for (String toDeleteFileName : plainFilenamesIn(RMSTAGE_DIR)) {
+                join(RMSTAGE_DIR, toDeleteFileName).delete();
+            }
+        }
+    }
+    static void IncorrectOperands() {
+        System.out.println("Incorrect operands.");
+        System.exit(0);
+    }
 
 }
