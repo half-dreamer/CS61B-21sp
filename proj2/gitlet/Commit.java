@@ -31,7 +31,7 @@ public class Commit implements Serializable {
     private Map<String,String> containingBlobs; // Map<fileName,Blob.Sha1> e.g. {"Hello.txt","0e93cac"}
     private String inBranch;
     Date timeStamp;
-    DateFormat df = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z");
+    DateFormat df = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z",Locale.ENGLISH);
     private List<String> mergedInParSha1 = new ArrayList<>();
     private boolean hasMutiplePars = false;
 
@@ -40,7 +40,7 @@ public class Commit implements Serializable {
         timeStamp = new Date(0);
         parSha1  = ""; // note : parSha1 is not null,instead,an empty String.For later execution of Sha1
         message = "initial commit";
-        containingBlobs = new HashMap<>(); // Map<fileName,Blob.Sha1> e.g. {"Hello.txt","0e93cac"}
+        containingBlobs = new TreeMap<>(); // Map<fileName,Blob.Sha1> e.g. {"Hello.txt","0e93cac"}
         curSha1 = Utils.sha1(message,parSha1,containingBlobs.toString(),df.format(timeStamp));
         inBranch = "Master";
     }

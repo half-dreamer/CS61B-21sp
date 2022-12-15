@@ -36,7 +36,7 @@ public class Repository {
     public static final File GITLET_DIR = join(CWD, ".gitlet");
     public static final File COMMIT_DIR = join(GITLET_DIR,"Commits");
     public static final File BLOB_DIR = join(GITLET_DIR,"Blobs");
-    public static final File POINTERS_DIR = join(GITLET_DIR,"CommitPOinters");
+    public static final File POINTERS_DIR = join(GITLET_DIR,"CommitPointers");
     public static final File HEAD_FILE = join(POINTERS_DIR,"HEAD");
     public static final File Master_FILE = join(POINTERS_DIR,"Master");
     public static final File ADDSTAGE_DIR = join(GITLET_DIR,"AddStage");
@@ -69,6 +69,7 @@ public class Repository {
         BLOB_DIR.mkdir();
         POINTERS_DIR.mkdir();
         ADDSTAGE_DIR.mkdir();
+        RMSTAGE_DIR.mkdir();
         Commit initCommit = new Commit();
         writeObject(join(COMMIT_DIR,initCommit.getCurSha1()),initCommit);
         String HEAD = initCommit.getCurSha1();
@@ -100,7 +101,7 @@ public class Repository {
         Commit HEADCommit = Utils.getCommitFromPointer("HEAD");
         if (HEADCommit.getContainingBlobs().containsValue(addedBlob.getSha1())) {
             //meaning the addedBlob has existed in the HEAD commit.so do not stage it and remote it from the Staging area if it existed.
-            Utils.restrictedDelete(join(ADDSTAGE_DIR,AddedFileName));
+            join(ADDSTAGE_DIR,AddedFileName).delete();
         } else {
             //addedBlob do not exist in HEAD commit ,so we add it to the AddStage.
             File toStagedFile = join(ADDSTAGE_DIR, AddedFileName);
@@ -115,23 +116,39 @@ public class Repository {
         //  2.create the right newCommit with correct timestamp,parent etc.(done)
         //  3.write the newCommit to the Commits Folder.(done)
         //  4.update the branches(done)
+        //  5.clear the AddStage and RemoveStage
         Commit prevCommit = Utils.getCommitFromPointer("HEAD");
         String parSha1 = prevCommit.getCurSha1();
         Map<String,String> newCommitContainingBlobs = prevCommit.getContainingBlobs(); //not updated
         // updateNewCommitContaingBlobs
         List<String> addStageFilesList = Utils.plainFilenamesIn(ADDSTAGE_DIR);
-        if (addStageFilesList.isEmpty()) {
+        List<String> rmStageFilesList = Utils.plainFilenamesIn(RMSTAGE_DIR);
+        if (addStageFilesList.isEmpty() && rmStageFilesList.isEmpty()) {
             System.out.println("No changes added to the commit.");
             return ;
         }
-        for (String fileName : addStageFilesList) {
-            StagedFile inStageFile = readObject(join(ADDSTAGE_DIR,fileName), StagedFile.class);
-            newCommitContainingBlobs.put(fileName,inStageFile.getBolbSha1());
+        for (String addFileName : addStageFilesList) {
+            StagedFile inAddStageFile = readObject(join(ADDSTAGE_DIR,addFileName), StagedFile.class);
+            newCommitContainingBlobs.put(addFileName,inAddStageFile.getBolbSha1());
+        }
+        for (String rmFileName : rmStageFilesList) {
+            StagedFile inRmStageFile = readObject(join(RMSTAGE_DIR,rmFileName), StagedFile.class);
+            newCommitContainingBlobs.remove(rmFileName,inRmStageFile.getBolbSha1());
         }
         Commit newCommit = new Commit(CommitMessage,parSha1,newCommitContainingBlobs,prevCommit.getInBranch());
         writeObject(join(COMMIT_DIR,newCommit.getCurSha1()),newCommit);//step3
         writeObject(join(POINTERS_DIR,"HEAD"),newCommit.getCurSha1()); //step4
         writeObject(join(POINTERS_DIR,newCommit.getInBranch()),newCommit.getCurSha1());
+        if (!(plainFilenamesIn(ADDSTAGE_DIR) == null)) {
+            for (String toDeleteFileName : plainFilenamesIn(ADDSTAGE_DIR)) {
+                join(ADDSTAGE_DIR, toDeleteFileName).delete();
+            }
+        }
+        if (!(plainFilenamesIn(RMSTAGE_DIR) == null)) {
+            for (String toDeleteFileName : plainFilenamesIn(RMSTAGE_DIR)) {
+                join(RMSTAGE_DIR, toDeleteFileName).delete();
+            }
+        }
     }
 
     static void rmCommand(String rmFileName) {
@@ -152,10 +169,10 @@ public class Repository {
             Utils.unstageAddStageFile(rmFileName);
         } else if(isTracked) {
             //Stage it for removal
-            File rmStageFile = join(RMSTAGE_DIR,rmFileName); // the position
-            Blob rmBlob = new Blob(rmFileName,join(BLOB_DIR,rmFileName));
-            StagedFile RemovedStageFile = new StagedFile(rmFileName,rmStageFile,rmBlob.getSha1());
-            writeObject(rmStageFile,RemovedStageFile); // write it to teh RmStage folder
+            File rmStageFileDes = join(RMSTAGE_DIR,rmFileName); // the position
+            Blob rmBlob = new Blob(rmFileName,join(CWD,rmFileName));
+            StagedFile RemovedStageFile = new StagedFile(rmFileName,join(CWD,rmFileName),rmBlob.getSha1());
+            writeObject(rmStageFileDes,RemovedStageFile); // write it to the RmStage folder
 
             //remove the file from the working directory if the user has not already done so
             restrictedDelete(join(CWD,rmFileName));
@@ -168,6 +185,8 @@ public class Repository {
         Commit curCommit = getCommitFromPointer("HEAD");
         while(!curCommit.getParSha1().equals("")) {
             showCommitInfo(curCommit);
+            String parSha1 = curCommit.getParSha1();
+            curCommit = readObject(join(COMMIT_DIR,parSha1), Commit.class);
         }
         showCommitInfo(curCommit);
     }
@@ -197,6 +216,8 @@ public class Repository {
         printBranches();
         printStagedFiles();
         printRemovedFiles();
+        printModifiedButNotStagedFiles();
+        printUntrackedFiles();
     }
 
 }

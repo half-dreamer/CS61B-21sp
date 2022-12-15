@@ -268,11 +268,13 @@ class Utils {
         Commit curCommit = getCommitFromPointer("HEAD");
         String curBranch = curCommit.getInBranch();
         System.out.println("*" + curBranch);
-        for (String Branch : plainFilenamesIn(POINTERS_DIR)) {
-            if (Branch.equals(curBranch) || Branch.equals("HEAD")) {
-                continue;
-            } else {
-                System.out.println(Branch);
+        if (!(plainFilenamesIn(POINTERS_DIR) == null)) {
+            for (String Branch : plainFilenamesIn(POINTERS_DIR)) {
+                if (Branch.equals(curBranch) || Branch.equals("HEAD")) {
+                    continue;
+                } else {
+                    System.out.println(Branch);
+                }
             }
         }
         System.out.println();
@@ -280,18 +282,34 @@ class Utils {
 
     static void printStagedFiles() {
         System.out.println("=== Staged Files ===");
-        for (String AddStageFileName : plainFilenamesIn(ADDSTAGE_DIR)) {
-            System.out.println(AddStageFileName);
+        if (!(plainFilenamesIn(ADDSTAGE_DIR) == null)) {
+            for (String AddStageFileName : plainFilenamesIn(ADDSTAGE_DIR)) {
+                System.out.println(AddStageFileName);
+            }
         }
         System.out.println();
     }
 
     static void printRemovedFiles() {
         System.out.println("=== Removed Files ===");
-        for (String removedFileName : plainFilenamesIn(RMSTAGE_DIR)) {
-            System.out.println(removedFileName);
+        if (!(plainFilenamesIn(RMSTAGE_DIR) == null)) {
+            for (String removedFileName : plainFilenamesIn(RMSTAGE_DIR)) {
+                System.out.println(removedFileName);
+            }
         }
         System.out.println();
     }
+
+    //TODO:these two print method needs to be completed
+    static void printModifiedButNotStagedFiles() {
+        System.out.println("=== Modifications Not Staged For Commit ===");
+        System.out.println();
+    }
+
+    static void printUntrackedFiles() {
+        System.out.println("=== Untracked Files ===");
+        System.out.println();
+    }
+    // TODO:above two method needs to be completed
 
 }
