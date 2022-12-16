@@ -88,6 +88,10 @@ public class Main {
                 String commitSha1 = args[1];
                 Repository.resetCommand(commitSha1);
                 break;
+            case "merge":
+                String mergedInBranchName = args[1];
+                Repository.mergeCommand(mergedInBranchName);
+                break;
         }
     }
 }

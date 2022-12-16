@@ -326,10 +326,27 @@ public class Repository {
     }
 
     static void resetCommand(String desCommitSha1) {
+        List<String> allCommitSha1s = plainFilenamesIn(COMMIT_DIR);
+        boolean isDesCommitExisted = false;
+        String fullDesCommitSha1 = "";
+        for (String curCommitSha1 : allCommitSha1s) {
+            if (curCommitSha1.startsWith(desCommitSha1)) {
+                isDesCommitExisted = true;
+                fullDesCommitSha1 = curCommitSha1;
+                break;
+            }
+        }
+        if (!isDesCommitExisted) {
+            System.out.println("No commit with that id exists.");
+            System.exit(0);
+        }
         String curBranchName = readObject(HEAD_FILE,String.class);
         resetCurCommitSha1 = readObject(join(POINTERS_DIR,curBranchName),String.class);
         writeObject(join(POINTERS_DIR,curBranchName),desCommitSha1);
         checkoutToBranch(curBranchName,true);
+    }
+    static void mergeCommand(String mergeInBranchName) {
+
     }
 
 

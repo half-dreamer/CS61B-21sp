@@ -13,7 +13,7 @@ import java.util.*;
  *  TODO: It's a good idea to give a description here of what else this Class
  *  does at a high level.
  *
- *  @author TODO
+ *  @author HalfDream
  */
 public class Commit implements Serializable {
     /**
@@ -27,7 +27,7 @@ public class Commit implements Serializable {
     /** The message of this Commit. */
     private String message;
     private String curSha1;
-    private String parSha1;
+    private String parSha1; //or say,first parent
     private Map<String,String> containingBlobs; // Map<fileName,Blob.Sha1> e.g. {"Hello.txt","0e93cac"}
     Date timeStamp;
     DateFormat df = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z",Locale.ENGLISH);
