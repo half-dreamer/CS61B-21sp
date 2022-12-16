@@ -41,6 +41,7 @@ public class Repository {
     public static final File Master_FILE = join(POINTERS_DIR,"master");
     public static final File ADDSTAGE_DIR = join(GITLET_DIR,"AddStage");
     public static final File RMSTAGE_DIR = join(GITLET_DIR,"RmStage");
+    public static String resetCurCommitSha1 = null;
 /**
      *  .gitlet (folder)
      *          Commits (folder)
@@ -51,7 +52,7 @@ public class Repository {
      *                  >blob (file)
      *         CommitPointers(folder)
      *                  >Commit(filename:Pointer Name, content: commit sha1 the pointer point at)
-     *                  >e.g. note: Special case : filename:HEAD content
+     *                  >e.g. note: Special case : filename:HEAD content : the branch name it currently points at
      *                  >e.g. (filename:master,content :some commit sha1)
      *         AddStage(folder)
      *                  >StagedFile (fliename: added file name , content: StagedFile(Object) (which has pointed Blob's Sha1 )
@@ -212,7 +213,7 @@ public class Repository {
     }
 
     // checkout [branch name]
-    static void checkoutToBranch(String desBranchName) {
+    static void checkoutToBranch(String desBranchName, boolean isUsedForReset) {
         List<String> branches = plainFilenamesIn(POINTERS_DIR);
         boolean isTheBranchExisted = false;
         String desBranchCommitSha1 = "";
@@ -227,11 +228,14 @@ public class Repository {
             System.out.println("No such branch exists.");
             System.exit(0);
         }
-        if (readObject(HEAD_FILE,String.class).equals(desBranchName)) {
-            errorMessage("No need to checkout the current branch.");
-        }
         Commit desCommit = readObject(join(COMMIT_DIR,desBranchCommitSha1), Commit.class);
         String curCommitSha1 = getCommitFromPointer("HEAD").getCurSha1();
+        if (isUsedForReset) {
+            curCommitSha1 = resetCurCommitSha1;
+        }
+        if (desCommit.getCurSha1().equals(curCommitSha1) ) {
+            errorMessage("No need to checkout the current branch.");
+        }
         Commit curCommit = readObject(join(COMMIT_DIR,curCommitSha1), Commit.class);
         Map<String,String> curCommitContaingBlobs = curCommit.getContainingBlobs();// Map<fileName,Blob.sha1> e.g.{"Hello.txt","0e93"}
         Map<String,String> desCommitContaingBlobs = desCommit.getContainingBlobs();
@@ -323,8 +327,9 @@ public class Repository {
 
     static void resetCommand(String desCommitSha1) {
         String curBranchName = readObject(HEAD_FILE,String.class);
+        resetCurCommitSha1 = readObject(join(POINTERS_DIR,curBranchName),String.class);
         writeObject(join(POINTERS_DIR,curBranchName),desCommitSha1);
-        checkoutToBranch(curBranchName);
+        checkoutToBranch(curBranchName,true);
     }
 
 

@@ -55,7 +55,7 @@ public class Main {
             case "checkout":
                 if (args.length == 2) {
                     String BranchName = args[1];
-                    Repository.checkoutToBranch(BranchName);
+                    Repository.checkoutToBranch(BranchName,false);
                     break;
                 }
                 if (args.length == 3) {
