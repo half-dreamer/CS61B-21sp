@@ -56,6 +56,7 @@ public class Main {
                 if (args.length == 2) {
                     String BranchName = args[1];
                     Repository.checkoutToBranch(BranchName);
+                    break;
                 }
                 if (args.length == 3) {
                     if (!args[1].equals("--")) {
@@ -63,6 +64,7 @@ public class Main {
                     }
                     String fileName = args[2];
                     Repository.checkoutToHeadWithOneFile(fileName);
+                    break;
                 }
                 if (args.length == 4) {
                     String commitSha1 = args[1];
@@ -71,11 +73,20 @@ public class Main {
                     }
                     String fileName = args[3];
                     Repository.checkoutToSpecificCommitWithOneFile(commitSha1,fileName);
+                    break;
                 }
                 break;
             case "branch":
                 String newBranchName = args[1];
                 Repository.branchCommand(newBranchName);
+                break;
+            case "rm-branch":
+                String rmBranchName = args[1];
+                Repository.rmBranchCommand(rmBranchName);
+                break;
+            case "reset":
+                String commitSha1 = args[1];
+                Repository.resetCommand(commitSha1);
                 break;
         }
     }

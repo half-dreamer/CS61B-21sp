@@ -136,8 +136,8 @@ public class Repository {
         }
         Commit newCommit = new Commit(CommitMessage,parSha1,newCommitContainingBlobs);
         writeObject(join(COMMIT_DIR,newCommit.getCurSha1()),newCommit);//step3
-        String curBranch = readObject(HEAD_FILE,String.class);
-        writeObject(join(POINTERS_DIR,curBranch),newCommit.getCurSha1());
+        String curBranchName = readObject(HEAD_FILE,String.class);
+        writeObject(join(POINTERS_DIR,curBranchName),newCommit.getCurSha1());
         clearTwoStages();
     }
 
@@ -174,7 +174,7 @@ public class Repository {
 
     static void logCommand() {
         Commit curCommit = getCommitFromPointer("HEAD");
-        while(!curCommit.getParSha1().equals("")) {
+        while(!(curCommit.getParSha1().equals(""))) {
             showCommitInfo(curCommit);
             String parSha1 = curCommit.getParSha1();
             curCommit = readObject(join(COMMIT_DIR,parSha1), Commit.class);
@@ -224,7 +224,8 @@ public class Repository {
             }
         }
         if (!isTheBranchExisted) {
-            errorMessage("No such branch exists.");
+            System.out.println("No such branch exists.");
+            System.exit(0);
         }
         if (readObject(HEAD_FILE,String.class).equals(desBranchName)) {
             errorMessage("No need to checkout the current branch.");
@@ -242,7 +243,8 @@ public class Repository {
         }
         for (String untrackFileName : untrackedFileNames) {
             if (desCommitContaingBlobs.containsKey(untrackFileName)) {
-                errorMessage("There is an untracked file in the way; delete it, or add and commit it first.");
+                System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                System.exit(0);
             }
         }
         //delete files tracked in curCommit but untracked in desCommit
@@ -285,7 +287,8 @@ public class Repository {
             }
         }
         if (!isDesCommitExisted) {
-            errorMessage("No commit with that id exists.");
+            System.out.println("No commit with that id exists.");
+            System.exit(0);
         }
         Commit desCommit = readObject(join(COMMIT_DIR,fullDesCommitSha1), Commit.class);
         String desBlobSha1 = desCommit.getContainingBlobs().get(fileName);
@@ -304,6 +307,24 @@ public class Repository {
             String HEADCommitSha1 = getCommitFromPointer("HEAD").getCurSha1();
             writeObject(join(POINTERS_DIR,newBranchName),HEADCommitSha1);
         }
+    }
+
+    static void rmBranchCommand(String rmBranchName) {
+         String curBranchName = readObject(HEAD_FILE,String.class);
+         List<String> allBranches = plainFilenamesIn(POINTERS_DIR);
+         if (!allBranches.contains(rmBranchName)) {
+             errorMessage("A branch with that name does not exist.");
+         }
+         if (rmBranchName.equals(curBranchName)) {
+             errorMessage("Cannot remove the current branch.");
+         }
+         join(POINTERS_DIR,rmBranchName).delete();
+    }
+
+    static void resetCommand(String desCommitSha1) {
+        String curBranchName = readObject(HEAD_FILE,String.class);
+        writeObject(join(POINTERS_DIR,curBranchName),desCommitSha1);
+        checkoutToBranch(curBranchName);
     }
 
 
