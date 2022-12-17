@@ -17,6 +17,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Formatter;
 import java.util.List;
+import java.util.Map;
 
 import static gitlet.Repository.*;
 
@@ -337,6 +338,55 @@ class Utils {
         System.exit(0);
     }
 
+    /**
+     * use DFS to iterate through the rootCommit and update the depthMap
+     * @param rootCommit  the start Commit which has not been put into the rooDepthMap
+     * @param rootDepthMap the DepthMap of root Commit
+     * @param curDepth the current depth of root Commit
+     * @return
+     */
+    static void changeDepthMapOf(Commit rootCommit, Map<String,Integer>rootDepthMap, int curDepth) {
+        if (rootCommit.getParSha1().equals("")) {
+            // base case : the rootCommit is the init commit
+            rootDepthMap.put(rootCommit.getCurSha1(),curDepth);
+            return ;
+        }
+        rootDepthMap.put(rootCommit.getCurSha1(),curDepth);
+        Commit firstParCommit = readObject(join(COMMIT_DIR,rootCommit.getParSha1()), Commit.class);
+        changeDepthMapOf(firstParCommit,rootDepthMap,curDepth + 1);
+        if (rootCommit.isHasMutiplePars()) {
+            for (String otherParCommitSha1 : rootCommit.getMergedInParSha1s()) {
+                Commit otherParCommit = readObject(join(COMMIT_DIR, otherParCommitSha1), Commit.class);
+                changeDepthMapOf(otherParCommit, rootDepthMap, curDepth + 1);
+            }
+        }
+    }
+
+    /**
+     * Iterate through two depthMap and find the splitCommit corresponding to minSumOfDistances
+     * @param curCommitDepthMap
+     * @param mergedInCommitDepthMap
+     * @return
+     */
+    static Commit findSplitCommit(Map<String,Integer>curCommitDepthMap,Map<String,Integer>mergedInCommitDepthMap) {
+        int minSumOfDistance = Integer.MAX_VALUE;
+        String splitCommitSha1 = null;
+        for (Map.Entry<String,Integer> mergedInCommitDepthMapEntry : mergedInCommitDepthMap.entrySet()) {
+            String iterateCommitSha1 = mergedInCommitDepthMapEntry.getKey();
+            if (curCommitDepthMap.containsKey(iterateCommitSha1)) {
+                // i.e. the entry is the cross part Commit of two Maps
+                int iterateCommitSumOfDistances = curCommitDepthMap.get(iterateCommitSha1) + mergedInCommitDepthMap.get(iterateCommitSha1);
+                if  (iterateCommitSumOfDistances < minSumOfDistance) {
+                    minSumOfDistance = iterateCommitSumOfDistances;
+                    splitCommitSha1 = iterateCommitSha1;
+                }
+            }
+        }
+        if (splitCommitSha1 == null) {
+            System.out.println("Something wrong occur,because we can't find the splitCommit!");
+        }
+        return readObject(join(COMMIT_DIR,splitCommitSha1), Commit.class);
+    }
 
 
 }

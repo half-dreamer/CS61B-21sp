@@ -81,5 +81,11 @@ public class Commit implements Serializable {
     public String DateInString() {
         return df.format(this.timeStamp);
     }
+    public void setHasMutiplePars(boolean bool) {
+        this.hasMutiplePars = bool;
+    }
+    public void addMergedInParSha1(String mergedInParSha1) {
+        this.mergedInParSha1.add(mergedInParSha1);
+    }
 
 }
