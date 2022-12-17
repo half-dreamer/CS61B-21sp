@@ -377,14 +377,7 @@ public class Repository {
         Map<String, String> mergedInCommitContainingBlobs = mergedInBranchCommit.getContainingBlobs();
         Map<String, String> newMergeCommitContainingBlobs = new HashMap<>();
         List<String> toDeleteFileList = new ArrayList<>();
-        System.out.println("curCommitContainingBlobs is");
-        for (String fileName : curCommitContainingBlobs.keySet()) {
-            System.out.println(fileName);
-        }
-        System.out.println("mergedInCommitContainingBlobs is");
-        for (String fileName : mergedInCommitContainingBlobs.keySet()) {
-            System.out.println(fileName);
-        }
+
         // iterate through all three BlobMaps, while iterating, remove the corresponding blob in all three maps
         for (Map.Entry<String, String> splitCommitBlobEntry : splitCommitContainingBlobs.entrySet()) {
             boolean isIterBlobExistInCurCommit = false;
@@ -411,47 +404,49 @@ public class Repository {
                 }
             }
 
-            //different cases(four cases)
-            if (isIterBlobSameAsCurCommitBlob && isIterBlobSameAsMergedInCommitBlob) {
-                // iter == cur == mergedIn
-                newMergeCommitContainingBlobs.put(iterFileName, iterBlobSha1);
-            }
-
-            if (!isIterBlobSameAsCurCommitBlob && isIterBlobSameAsMergedInCommitBlob) {
-                // iter != cur  iter == mergedIn
-                newMergeCommitContainingBlobs.put(iterFileName, curCommitBlobSha1);
-            }
-
-            if (isIterBlobSameAsCurCommitBlob && !isIterBlobSameAsMergedInCommitBlob) {
-                // iter == cur  iter != mergedIn
-                newMergeCommitContainingBlobs.put(iterFileName, mergedInCommitBlobSha1);
-            }
-
-            if (!isIterBlobSameAsCurCommitBlob && !isIterBlobSameAsMergedInCommitBlob) {
-                // iter != cur   iter != mergedIn
-                if (!isIterBlobExistInCurCommit && !isIterBolbExistInMergedInCommit) {
-                    //do nothing.
-                } else if (curCommitContainingBlobs.equals(mergedInCommitContainingBlobs)) {
-                    // cur == mergedIn  (or say , modified in the same way )
-                    newMergeCommitContainingBlobs.put(iterFileName, curCommitBlobSha1);
-                } else {
-                    // cur != mergedIn  merge conflict occur ( modified in different ways)
-                    System.out.println("Encountered a merge conflict.");
-                    // store conflict string in the file and create a blob storing this file content
-                    File solveMergeConfilctFile = join(CWD, "solveMergeConflictFile");
-                    String curBlobFileContent = ""; // when cur doesn't exist, its content is empty
-                    String mergedInBlobFileContent = ""; // when mergedIn doesn't exist, its content is empty
-                    if (isIterBlobExistInCurCommit) {
-                        curBlobFileContent = readObject(join(BLOB_DIR, curCommitBlobSha1), Blob.class).getFileContent();
-                    }
-                    if (isIterBolbExistInMergedInCommit) {
-                        mergedInBlobFileContent = readObject(join(BLOB_DIR, mergedInCommitBlobSha1), Blob.class).getFileContent();
-                    }
-                    writeContents(solveMergeConfilctFile, "<<<<<<< HEAD\n" + curBlobFileContent + "=======\n" + mergedInBlobFileContent + ">>>>>>>");
-                    Blob mergeConlictBlob = new Blob(iterFileName, solveMergeConfilctFile);
-                    newMergeCommitContainingBlobs.put(iterFileName, mergeConlictBlob.getSha1());
+            if (isIterBlobExistInCurCommit && isIterBolbExistInMergedInCommit) {
+                //different cases(four cases)
+                if (isIterBlobSameAsCurCommitBlob && isIterBlobSameAsMergedInCommitBlob) {
+                    // iter == cur == mergedIn
+                    newMergeCommitContainingBlobs.put(iterFileName, iterBlobSha1);
                 }
+
+                if (!isIterBlobSameAsCurCommitBlob && isIterBlobSameAsMergedInCommitBlob) {
+                    // iter != cur  iter == mergedIn
+                    newMergeCommitContainingBlobs.put(iterFileName, curCommitBlobSha1);
+                }
+
+                if (isIterBlobSameAsCurCommitBlob && !isIterBlobSameAsMergedInCommitBlob) {
+                    // iter == cur  iter != mergedIn
+                    newMergeCommitContainingBlobs.put(iterFileName, mergedInCommitBlobSha1);
+                }
+
+                if (!isIterBlobSameAsCurCommitBlob && !isIterBlobSameAsMergedInCommitBlob) {
+                    // iter != cur   iter != mergedIn
+                    if (!isIterBlobExistInCurCommit && !isIterBolbExistInMergedInCommit) {
+                        //do nothing.
+                    } else if (curCommitContainingBlobs.equals(mergedInCommitContainingBlobs)) {
+                        // cur == mergedIn  (or say , modified in the same way )
+                        newMergeCommitContainingBlobs.put(iterFileName, curCommitBlobSha1);
+                    } else {
+                        fixMergeConflict(isIterBlobExistInCurCommit,isIterBolbExistInMergedInCommit,curCommitBlobSha1,
+                                mergedInCommitBlobSha1,iterFileName,newMergeCommitContainingBlobs);
+                    }
+                }
+            } else if (isIterBlobExistInCurCommit && !isIterBolbExistInMergedInCommit) {
+                if (!isIterBlobSameAsCurCommitBlob) {
+                    fixMergeConflict(isIterBlobExistInCurCommit,isIterBolbExistInMergedInCommit,curCommitBlobSha1,
+                            mergedInCommitBlobSha1,iterFileName,newMergeCommitContainingBlobs);
+                }
+            } else if (!isIterBlobExistInCurCommit && isIterBolbExistInMergedInCommit) {
+                if (!isIterBlobSameAsMergedInCommitBlob) {
+                    fixMergeConflict(isIterBlobExistInCurCommit,isIterBolbExistInMergedInCommit,curCommitBlobSha1,
+                            mergedInCommitBlobSha1,iterFileName,newMergeCommitContainingBlobs);
+                }
+            } else {
+                 //do nothing.
             }
+
             toDeleteFileList.add(iterFileName);
         }
         for (String iterFileName : toDeleteFileList) {
@@ -466,22 +461,22 @@ public class Repository {
         }
         toDeleteFileList.clear();
 
-        System.out.println("After the first loop ,newCommitContainingBlobs is");
-        for (String fileName : newMergeCommitContainingBlobs.keySet()) {
-            System.out.println(fileName);
-        }
+
 
         // the second loop : now iterate through the remaining curCommitContainingBlobs
         for (Map.Entry<String,String> curCommitBlobEntry : curCommitContainingBlobs.entrySet()) {
             String iterFileName = curCommitBlobEntry.getKey();
             String iterBlobSha1 = curCommitBlobEntry.getValue();
             if (mergedInCommitContainingBlobs.containsKey(iterFileName)) {
-                String mergedInBlobSha1 = mergedInCommitContainingBlobs.get(iterFileName);
-                String curBlobSha1 = iterBlobSha1;
-                if (curBlobSha1.equals(mergedInBlobSha1)) {
-                    newMergeCommitContainingBlobs.put(iterFileName,curBlobSha1);
+                String mergedInCommitBlobSha1 = mergedInCommitContainingBlobs.get(iterFileName);
+                String curCommitBlobSha1 = iterBlobSha1;
+                if (curCommitBlobSha1.equals(mergedInCommitBlobSha1)) {
+                    newMergeCommitContainingBlobs.put(iterFileName,curCommitBlobSha1);
                 } else {
                     // merge conflict
+                    fixMergeConflict(true,true,curCommitBlobSha1,
+                            mergedInCommitBlobSha1,iterFileName,newMergeCommitContainingBlobs);
+                    /**
                     System.out.println("Encountered a merge conflict.");
                     String curBlobFileContent = readObject(join(BLOB_DIR,curBlobSha1),Blob.class).getFileContent();
                     String mergedInBlobFileContent = readObject(join(BLOB_DIR,mergedInBlobSha1), Blob.class).getFileContent();
@@ -489,6 +484,7 @@ public class Repository {
                     writeContents(solveMergeConfilctFile, "<<<<<<< HEAD\n" + curBlobFileContent + "=======\n" + mergedInBlobFileContent + ">>>>>>>");
                     Blob mergeConlictBlob = new Blob(iterFileName, solveMergeConfilctFile);
                     newMergeCommitContainingBlobs.put(iterFileName, mergeConlictBlob.getSha1());
+                     */
                 }
             } else {
                 // split (x) cur (E) mergedIn (x)
@@ -505,11 +501,6 @@ public class Repository {
         }
         toDeleteFileList.clear();
 
-        System.out.println("After the second loop ,newCommitContainingBlobs is");
-        for (String fileName : newMergeCommitContainingBlobs.keySet()) {
-            System.out.println(fileName);
-        }
-
         // the third loop : iterate through the mergedInCommitContainingBlobs
         // split(x) cur(x) mergedIn(E)
         for (Map.Entry<String,String> mergedInCommitBlobEntry : mergedInCommitContainingBlobs.entrySet()) {
@@ -524,11 +515,6 @@ public class Repository {
         if (!mergedInCommitContainingBlobs.isEmpty()) {
             System.out.println("Error : the mergedInCommitContainingBlobs is not empty after the third loop!");
         }
-        System.out.println("lastly ,newCommitContainingBlobs is");
-        for (String fileName : newMergeCommitContainingBlobs.keySet()) {
-            System.out.println(fileName);
-        }
-
 
         // create new commit and update its merge-relative attributes
         String curBranchName = readObject(HEAD_FILE,String.class);
@@ -540,7 +526,8 @@ public class Repository {
         // write the commit to COMMIT folder
         writeObject(join(COMMIT_DIR,newCommit.getCurSha1()),newCommit);
         writeObject(join(POINTERS_DIR,curBranchName),newCommit.getCurSha1()); // update current pointer
-        checkoutToBranch(mergedInBranchName,false);
+        resetCurCommitSha1 = curCommit.getCurSha1();
+        checkoutToBranch(curBranchName,true);
 
 
 

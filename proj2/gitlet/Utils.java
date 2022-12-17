@@ -262,9 +262,9 @@ class Utils {
         System.out.println("commit " + toBeShowedCommit.getCurSha1());
         if (toBeShowedCommit.isHasMutiplePars()) {
             // if this commit has multiple parents
-            System.out.print("Merge: " + toBeShowedCommit.getCurSha1().substring(0,7));
+            System.out.print("Merge: " + toBeShowedCommit.getParSha1().substring(0,7));
             for (String mergedInParSha1 : toBeShowedCommit.getMergedInParSha1s()) {
-                System.out.print(" " + mergedInParSha1);
+                System.out.print(" " + mergedInParSha1.substring(0,7));
             }
             System.out.println();
         }
@@ -386,6 +386,26 @@ class Utils {
             System.out.println("Something wrong occur,because we can't find the splitCommit!");
         }
         return readObject(join(COMMIT_DIR,splitCommitSha1), Commit.class);
+    }
+    static void fixMergeConflict(boolean isIterBlobExistInCurCommit,boolean isIterBolbExistInMergedInCommit,
+                                 String curCommitBlobSha1, String mergedInCommitBlobSha1,String iterFileName,
+                                 Map<String,String> newMergeCommitContainingBlobs) {
+        // cur != mergedIn  merge conflict occur ( modified in different ways)
+        System.out.println("Encountered a merge conflict.");
+        // store conflict string in the file and create a blob storing this file content
+        File solveMergeConfilctFile = join(CWD, "solveMergeConflictFile");
+        String curBlobFileContent = ""; // when cur doesn't exist, its content is empty
+        String mergedInBlobFileContent = ""; // when mergedIn doesn't exist, its content is empty
+        if (isIterBlobExistInCurCommit) {
+            curBlobFileContent = readObject(join(BLOB_DIR, curCommitBlobSha1), Blob.class).getFileContent();
+        }
+        if (isIterBolbExistInMergedInCommit) {
+            mergedInBlobFileContent = readObject(join(BLOB_DIR, mergedInCommitBlobSha1), Blob.class).getFileContent();
+        }
+        writeContents(solveMergeConfilctFile, "<<<<<<< HEAD\n" + curBlobFileContent + "=======\n" + mergedInBlobFileContent + ">>>>>>>\n");
+        Blob mergeConlictBlob = new Blob(iterFileName, solveMergeConfilctFile);
+        newMergeCommitContainingBlobs.put(iterFileName, mergeConlictBlob.getSha1());
+        writeObject(join(BLOB_DIR,mergeConlictBlob.getSha1()),mergeConlictBlob);
     }
 
 
