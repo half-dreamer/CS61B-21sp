@@ -10,9 +10,8 @@ public class Main {
      *  <COMMAND> <OPERAND1> <OPERAND2> ... 
      */
     public static void main(String[] args) {
-        if (args == null) {
-            System.out.println("Please enter a command.");
-            System.exit(0);
+        if (args.length == 0) {
+            errorMessage("Please enter a command.");
         }
         String firstArg = args[0];
         switch (firstArg) {
@@ -29,7 +28,7 @@ public class Main {
             case "commit":    //usage : java gitlet.Main commit [message]
                 assertHasInitialedGitRepo();
                 if (args.length == 1) {
-                    errorMessage("Please enter a commit message.\n");
+                    errorMessage("Please enter a commit message.");
                 }
                 String commitMessage = args[1];
                 Repository.CommitCommand(commitMessage);
