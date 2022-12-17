@@ -6,16 +6,22 @@ import java.io.Serializable;
 public class StagedFile implements Serializable {
     String fileName;
     String fileContent;
-    String bolbSha1;
+    String blobSha1;
 
     public StagedFile(String StagedFileName,File toStagedFile,String addedBlobSha1) {
         fileContent = Utils.readContentsAsString(toStagedFile);
         fileName = StagedFileName;
-        this.bolbSha1 = addedBlobSha1;
+        this.blobSha1 = addedBlobSha1;
+    }
+
+    public StagedFile(String StagedFileName, String fileContent,String BlobSha1) {
+        this.fileName = StagedFileName;
+        this.fileContent = fileContent;
+        this.blobSha1 = BlobSha1;
     }
 
     public String getBolbSha1() {
-        return bolbSha1;
+        return blobSha1;
     }
 
     public String getFileContent() {

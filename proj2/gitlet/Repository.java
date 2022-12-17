@@ -23,7 +23,6 @@ public class Repository {
      */
     //TODO: I still don't know whether the HEAD and BRANCHES can be stored during the Main execution.
     //TODO: though I can store the HEAD and Branches in some File or Folder.
-    public static int BRANCHS_COUNT = 1;
 
     /** The current working directory. */
     public static final File CWD = new File(System.getProperty("user.dir"));
@@ -58,7 +57,7 @@ public class Repository {
     /* TODO: fill in the rest of this class. */
     static void InitCommand() {
         if (GITLET_DIR.exists()) {
-            throw Utils.error("A Gitlet version-control system already exists in the current directory.");
+            errorMessage("A Gitlet version-control system already exists in the current directory.");
         }
         // create all needed folders
         GITLET_DIR.mkdir();
@@ -82,7 +81,7 @@ public class Repository {
         // So we create a new class called StagedFile to store these information)
         File AddedFile = join(CWD,AddedFileName);
         if (!AddedFile.exists()) {
-            Utils.error("File does not exist.");
+            errorMessage("File does not exist.");
         }
 
         //TODO:figure out whether the file (or say blob) have existed in the Blobs dir
@@ -99,6 +98,7 @@ public class Repository {
         if (HEADCommit.getContainingBlobs().containsValue(addedBlob.getSha1())) {
             //meaning the addedBlob has existed in the HEAD commit.so do not stage it and remote it from the Staging area if it existed.
             join(ADDSTAGE_DIR,AddedFileName).delete();
+            join(RMSTAGE_DIR,AddedFileName).delete();
         } else {
             //addedBlob do not exist in HEAD commit ,so we add it to the AddStage.
             File toStagedFile = join(ADDSTAGE_DIR, AddedFileName);
@@ -142,7 +142,7 @@ public class Repository {
         boolean isStaged = false;
         boolean isTracked = false;
         boolean isExisted = false;
-        if (Utils.plainFilenamesIn(ADDSTAGE_DIR).contains(rmFileName)) {
+        if (plainFilenamesIn(ADDSTAGE_DIR).contains(rmFileName)) {
             isStaged = true;
         }
         if (Utils.getCommitFromPointer("HEAD").getContainingBlobs().containsKey(rmFileName)) {
@@ -153,18 +153,28 @@ public class Repository {
         }
 
         if (isStaged) {
-            Utils.unstageAddStageFile(rmFileName);
+            unstageAddStageFile(rmFileName);
         } else if(isTracked) {
             //Stage it for removal
+            Commit curCommit = getCommitFromPointer("HEAD");
+            String rmBlobSha1 = curCommit.getContainingBlobs().get(rmFileName);
+            Blob rmBlob = readObject(join(BLOB_DIR,rmBlobSha1),Blob.class);
+            StagedFile RemovedStageFile = new StagedFile(rmFileName,rmBlob.getFileContent(),rmBlobSha1);
+            writeObject(join(RMSTAGE_DIR,rmFileName),RemovedStageFile);
+            /** original solution
+             * the problem is : the Removed File may be removed before we
+             * execute the git rm command, so we can't read content from
+             * the removed file
+             *
             File rmStageFileDes = join(RMSTAGE_DIR,rmFileName); // the position
             Blob rmBlob = new Blob(rmFileName,join(CWD,rmFileName));
             StagedFile RemovedStageFile = new StagedFile(rmFileName,join(CWD,rmFileName),rmBlob.getSha1());
             writeObject(rmStageFileDes,RemovedStageFile); // write it to the RmStage folder
-
+             */
             //remove the file from the working directory if the user has not already done so
             restrictedDelete(join(CWD,rmFileName));
         } else {
-            throw error("No reason to remove the file.");
+            errorMessage("No reason to remove the file.");
         }
     }
 
@@ -195,7 +205,7 @@ public class Repository {
             }
         }
         if (findCount == 0) {
-            throw error("Found no commit with that message.");
+            errorMessage("Found no commit with that message.");
         }
     }
 
@@ -228,7 +238,8 @@ public class Repository {
         if (isUsedForReset) {
             curCommitSha1 = resetCurCommitSha1;
         }
-        if (desCommit.getCurSha1().equals(curCommitSha1) ) {
+        if (desCommit.getCurSha1().equals(curCommitSha1) && desBranchName.equals(readObject(HEAD_FILE,String.class)) ) {
+            // the desBranch and curBranch may point at same commit
             errorMessage("No need to checkout the current branch.");
         }
         Commit curCommit = readObject(join(COMMIT_DIR,curCommitSha1), Commit.class);
@@ -378,6 +389,16 @@ public class Repository {
         Map<String, String> newMergeCommitContainingBlobs = new HashMap<>();
         List<String> toDeleteFileList = new ArrayList<>();
 
+        List<String> untrackedFileNames = new ArrayList<>();
+        for (String workingFileName : plainFilenamesIn(CWD)) {
+            if (!curCommitContainingBlobs.containsKey(workingFileName)) {
+                untrackedFileNames.add(workingFileName);
+            }
+        }
+        if (!untrackedFileNames.isEmpty()) {
+            errorMessage("There is an untracked file in the way; delete it, or add and commit it first.");
+        }
+
         // iterate through all three BlobMaps, while iterating, remove the corresponding blob in all three maps
         for (Map.Entry<String, String> splitCommitBlobEntry : splitCommitContainingBlobs.entrySet()) {
             boolean isIterBlobExistInCurCommit = false;
@@ -461,8 +482,6 @@ public class Repository {
         }
         toDeleteFileList.clear();
 
-
-
         // the second loop : now iterate through the remaining curCommitContainingBlobs
         for (Map.Entry<String,String> curCommitBlobEntry : curCommitContainingBlobs.entrySet()) {
             String iterFileName = curCommitBlobEntry.getKey();
@@ -476,15 +495,6 @@ public class Repository {
                     // merge conflict
                     fixMergeConflict(true,true,curCommitBlobSha1,
                             mergedInCommitBlobSha1,iterFileName,newMergeCommitContainingBlobs);
-                    /**
-                    System.out.println("Encountered a merge conflict.");
-                    String curBlobFileContent = readObject(join(BLOB_DIR,curBlobSha1),Blob.class).getFileContent();
-                    String mergedInBlobFileContent = readObject(join(BLOB_DIR,mergedInBlobSha1), Blob.class).getFileContent();
-                    File solveMergeConfilctFile = join(CWD, "solveMergeConflictFile");
-                    writeContents(solveMergeConfilctFile, "<<<<<<< HEAD\n" + curBlobFileContent + "=======\n" + mergedInBlobFileContent + ">>>>>>>");
-                    Blob mergeConlictBlob = new Blob(iterFileName, solveMergeConfilctFile);
-                    newMergeCommitContainingBlobs.put(iterFileName, mergeConlictBlob.getSha1());
-                     */
                 }
             } else {
                 // split (x) cur (E) mergedIn (x)
@@ -516,12 +526,17 @@ public class Repository {
             System.out.println("Error : the mergedInCommitContainingBlobs is not empty after the third loop!");
         }
 
+
         // create new commit and update its merge-relative attributes
         String curBranchName = readObject(HEAD_FILE,String.class);
         String newCommitMessage = "Merged " + mergedInBranchName + " into " + curBranchName + ".";
         Commit newCommit = new Commit(newCommitMessage,curCommit.getCurSha1(),newMergeCommitContainingBlobs);
         newCommit.addMergedInParSha1(mergedInBranchCommit.getCurSha1());
         newCommit.setHasMutiplePars(true);
+
+
+
+
 
         // write the commit to COMMIT folder
         writeObject(join(COMMIT_DIR,newCommit.getCurSha1()),newCommit);

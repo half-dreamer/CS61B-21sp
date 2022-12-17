@@ -28,9 +28,8 @@ public class Main {
                 break;
             // TODO: FILL THE REST IN
             case "commit":    //usage : java gitlet.Main commit [message]
-                if (args[1].equals("")) {
-                    System.out.println("Please enter a commit message.");
-                    System.exit(1);
+                if (args.length == 1) {
+                    errorMessage("Please enter a commit message.");
                 }
                 String commitMessage = args[1];
                 Repository.CommitCommand(commitMessage);
