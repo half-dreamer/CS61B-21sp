@@ -8,13 +8,13 @@ public class StagedFile implements Serializable {
     String fileContent;
     String blobSha1;
 
-    public StagedFile(String StagedFileName,File toStagedFile,String addedBlobSha1) {
+    public StagedFile(String StagedFileName, File toStagedFile, String addedBlobSha1) {
         fileContent = Utils.readContentsAsString(toStagedFile);
         fileName = StagedFileName;
         this.blobSha1 = addedBlobSha1;
     }
 
-    public StagedFile(String StagedFileName, String fileContent,String BlobSha1) {
+    public StagedFile(String StagedFileName, String fileContent, String BlobSha1) {
         this.fileName = StagedFileName;
         this.fileContent = fileContent;
         this.blobSha1 = BlobSha1;

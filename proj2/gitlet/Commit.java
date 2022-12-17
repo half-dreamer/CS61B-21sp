@@ -1,53 +1,51 @@
 package gitlet;
 
-// TODO: any imports you need here
-
-import jdk.jshell.execution.Util;
 
 import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-/** Represents a gitlet commit object.
- *  TODO: It's a good idea to give a description here of what else this Class
- *  does at a high level.
+/**
+ * Represents a gitlet commit object.
+ * does at a high level.
  *
- *  @author HalfDream
+ * @author HalfDream
  */
 public class Commit implements Serializable {
     /**
-     * TODO: add instance variables here.
      *
      * List all instance variables of the Commit class here with a useful
      * comment above them describing what that variable represents and how that
      * variable is used. We've provided one example for `message`.
      */
 
-    /** The message of this Commit. */
+    /**
+     * The message of this Commit.
+     */
     private String message;
     private String curSha1;
     private String parSha1; //or say,first parent
-    private Map<String,String> containingBlobs; // Map<fileName,Blob.Sha1> e.g. {"Hello.txt","0e93cac"}
+    private Map<String, String> containingBlobs; // Map<fileName,Blob.Sha1> e.g. {"Hello.txt","0e93cac"}
     Date timeStamp;
-    DateFormat df = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z",Locale.ENGLISH);
+    DateFormat df = new SimpleDateFormat("EEE MMM d HH:mm:ss yyyy Z", Locale.ENGLISH);
     private List<String> mergedInParSha1 = new ArrayList<>();
     private boolean hasMutiplePars = false;
 
-    /* TODO: fill in the rest of this class. */
     public Commit() {
         timeStamp = new Date(0);
-        parSha1  = ""; // note : parSha1 is not null,instead,an empty String.For later execution of Sha1
+        parSha1 = ""; // note : parSha1 is not null,instead,an empty String.For later execution of Sha1
         message = "initial commit";
         containingBlobs = new TreeMap<>(); // Map<fileName,Blob.Sha1> e.g. {"Hello.txt","0e93cac"}
-        curSha1 = Utils.sha1(message,parSha1,containingBlobs.toString(),df.format(timeStamp));
+        curSha1 = Utils.sha1(message, parSha1, containingBlobs.toString(), df.format(timeStamp));
     }
-    public Commit(String message,String parSha1,Map<String,String> containingBlobs) {
+
+    public Commit(String message, String parSha1, Map<String, String> containingBlobs) {
         this.message = message;
         this.parSha1 = parSha1;
         this.timeStamp = new Date();
         this.containingBlobs = containingBlobs;
-        this.curSha1 = Utils.sha1(message,parSha1,containingBlobs.toString(),df.format(timeStamp));
+        this.curSha1 = Utils.sha1(message, parSha1, containingBlobs.toString(), df.format(timeStamp));
     }
 
     String getCurSha1() {
@@ -78,12 +76,15 @@ public class Commit implements Serializable {
     public boolean isHasMutiplePars() {
         return hasMutiplePars;
     }
+
     public String DateInString() {
         return df.format(this.timeStamp);
     }
+
     public void setHasMutiplePars(boolean bool) {
         this.hasMutiplePars = bool;
     }
+
     public void addMergedInParSha1(String mergedInParSha1) {
         this.mergedInParSha1.add(mergedInParSha1);
     }

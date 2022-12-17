@@ -22,22 +22,27 @@ import java.util.Map;
 import static gitlet.Repository.*;
 
 
-/** Assorted utilities.
- *
+/**
+ * Assorted utilities.
+ * <p>
  * Give this file a good read as it provides several useful utility functions
  * to save you some time.
  *
- *  @author P. N. Hilfinger
+ * @author P. N. Hilfinger
  */
 class Utils {
 
-    /** The length of a complete SHA-1 UID as a hexadecimal numeral. */
+    /**
+     * The length of a complete SHA-1 UID as a hexadecimal numeral.
+     */
     static final int UID_LENGTH = 40;
 
     /* SHA-1 HASH VALUES. */
 
-    /** Returns the SHA-1 hash of the concatenation of VALS, which may
-     *  be any mixture of byte arrays and Strings. */
+    /**
+     * Returns the SHA-1 hash of the concatenation of VALS, which may
+     * be any mixture of byte arrays and Strings.
+     */
     static String sha1(Object... vals) {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-1");
@@ -60,18 +65,22 @@ class Utils {
         }
     }
 
-    /** Returns the SHA-1 hash of the concatenation of the strings in
-     *  VALS. */
+    /**
+     * Returns the SHA-1 hash of the concatenation of the strings in
+     * VALS.
+     */
     static String sha1(List<Object> vals) {
         return sha1(vals.toArray(new Object[vals.size()]));
     }
 
     /* FILE DELETION */
 
-    /** Deletes FILE if it exists and is not a directory.  Returns true
-     *  if FILE was deleted, and false otherwise.  Refuses to delete FILE
-     *  and throws IllegalArgumentException unless the directory designated by
-     *  FILE also contains a directory named .gitlet. */
+    /**
+     * Deletes FILE if it exists and is not a directory.  Returns true
+     * if FILE was deleted, and false otherwise.  Refuses to delete FILE
+     * and throws IllegalArgumentException unless the directory designated by
+     * FILE also contains a directory named .gitlet.
+     */
     static boolean restrictedDelete(File file) {
         if (!(new File(file.getParentFile(), ".gitlet")).isDirectory()) {
             throw new IllegalArgumentException("not .gitlet working directory");
@@ -83,19 +92,23 @@ class Utils {
         }
     }
 
-    /** Deletes the file named FILE if it exists and is not a directory.
-     *  Returns true if FILE was deleted, and false otherwise.  Refuses
-     *  to delete FILE and throws IllegalArgumentException unless the
-     *  directory designated by FILE also contains a directory named .gitlet. */
+    /**
+     * Deletes the file named FILE if it exists and is not a directory.
+     * Returns true if FILE was deleted, and false otherwise.  Refuses
+     * to delete FILE and throws IllegalArgumentException unless the
+     * directory designated by FILE also contains a directory named .gitlet.
+     */
     static boolean restrictedDelete(String file) {
         return restrictedDelete(new File(file));
     }
 
     /* READING AND WRITING FILE CONTENTS */
 
-    /** Return the entire contents of FILE as a byte array.  FILE must
-     *  be a normal file.  Throws IllegalArgumentException
-     *  in case of problems. */
+    /**
+     * Return the entire contents of FILE as a byte array.  FILE must
+     * be a normal file.  Throws IllegalArgumentException
+     * in case of problems.
+     */
     static byte[] readContents(File file) {
         if (!file.isFile()) {
             throw new IllegalArgumentException("must be a normal file");
@@ -107,25 +120,27 @@ class Utils {
         }
     }
 
-    /** Return the entire contents of FILE as a String.  FILE must
-     *  be a normal file.  Throws IllegalArgumentException
-     *  in case of problems. */
+    /**
+     * Return the entire contents of FILE as a String.  FILE must
+     * be a normal file.  Throws IllegalArgumentException
+     * in case of problems.
+     */
     static String readContentsAsString(File file) {
         return new String(readContents(file), StandardCharsets.UTF_8);
     }
 
-    /** Write the result of concatenating the bytes in CONTENTS to FILE,
-     *  creating or overwriting it as needed.  Each object in CONTENTS may be
-     *  either a String or a byte array.  Throws IllegalArgumentException
-     *  in case of problems. */
+    /**
+     * Write the result of concatenating the bytes in CONTENTS to FILE,
+     * creating or overwriting it as needed.  Each object in CONTENTS may be
+     * either a String or a byte array.  Throws IllegalArgumentException
+     * in case of problems.
+     */
     static void writeContents(File file, Object... contents) {
         try {
             if (file.isDirectory()) {
-                throw
-                    new IllegalArgumentException("cannot overwrite directory");
+                throw new IllegalArgumentException("cannot overwrite directory");
             }
-            BufferedOutputStream str =
-                new BufferedOutputStream(Files.newOutputStream(file.toPath()));
+            BufferedOutputStream str = new BufferedOutputStream(Files.newOutputStream(file.toPath()));
             for (Object obj : contents) {
                 if (obj instanceof byte[]) {
                     str.write((byte[]) obj);
@@ -139,41 +154,45 @@ class Utils {
         }
     }
 
-    /** Return an object of type T read from FILE, casting it to EXPECTEDCLASS.
-     *  Throws IllegalArgumentException in case of problems. */
-    static <T extends Serializable> T readObject(File file,
-                                                 Class<T> expectedClass) {
+    /**
+     * Return an object of type T read from FILE, casting it to EXPECTEDCLASS.
+     * Throws IllegalArgumentException in case of problems.
+     */
+    static <T extends Serializable> T readObject(File file, Class<T> expectedClass) {
         try {
-            ObjectInputStream in =
-                new ObjectInputStream(new FileInputStream(file));
+            ObjectInputStream in = new ObjectInputStream(new FileInputStream(file));
             T result = expectedClass.cast(in.readObject());
             in.close();
             return result;
-        } catch (IOException | ClassCastException
-                 | ClassNotFoundException excp) {
+        } catch (IOException | ClassCastException | ClassNotFoundException excp) {
             throw new IllegalArgumentException(excp.getMessage());
         }
     }
 
-    /** Write OBJ to FILE. */
+    /**
+     * Write OBJ to FILE.
+     */
     static void writeObject(File file, Serializable obj) {
         writeContents(file, serialize(obj));
     }
 
     /* DIRECTORIES */
 
-    /** Filter out all but plain files. */
-    private static final FilenameFilter PLAIN_FILES =
-        new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                return new File(dir, name).isFile();
-            }
-        };
+    /**
+     * Filter out all but plain files.
+     */
+    private static final FilenameFilter PLAIN_FILES = new FilenameFilter() {
+        @Override
+        public boolean accept(File dir, String name) {
+            return new File(dir, name).isFile();
+        }
+    };
 
-    /** Returns a list of the names of all plain files in the directory DIR, in
-     *  lexicographic order as Java Strings.  Returns null if DIR does
-     *  not denote a directory. */
+    /**
+     * Returns a list of the names of all plain files in the directory DIR, in
+     * lexicographic order as Java Strings.  Returns null if DIR does
+     * not denote a directory.
+     */
     static List<String> plainFilenamesIn(File dir) {
         String[] files = dir.list(PLAIN_FILES);
         if (files == null) {
@@ -184,33 +203,41 @@ class Utils {
         }
     }
 
-    /** Returns a list of the names of all plain files in the directory DIR, in
-     *  lexicographic order as Java Strings.  Returns null if DIR does
-     *  not denote a directory. */
+    /**
+     * Returns a list of the names of all plain files in the directory DIR, in
+     * lexicographic order as Java Strings.  Returns null if DIR does
+     * not denote a directory.
+     */
     static List<String> plainFilenamesIn(String dir) {
         return plainFilenamesIn(new File(dir));
     }
 
     /* OTHER FILE UTILITIES */
 
-    /** Return the concatentation of FIRST and OTHERS into a File designator,
-     *  analogous to the {@link java.nio.file.Paths.#get(String, String[])}
-     *  method. */
+    /**
+     * Return the concatentation of FIRST and OTHERS into a File designator,
+     * analogous to the {@link java.nio.file.Paths.#get(String, String[])}
+     * method.
+     */
     static File join(String first, String... others) {
         return Paths.get(first, others).toFile();
     }
 
-    /** Return the concatentation of FIRST and OTHERS into a File designator,
-     *  analogous to the {@link java.nio.file.Paths.#get(String, String[])}
-     *  method. */
-     static File join(File first, String... others) {
+    /**
+     * Return the concatentation of FIRST and OTHERS into a File designator,
+     * analogous to the {@link java.nio.file.Paths.#get(String, String[])}
+     * method.
+     */
+    static File join(File first, String... others) {
         return Paths.get(first.getPath(), others).toFile();
     }
 
 
     /* SERIALIZATION UTILITIES */
 
-    /** Returns a byte array containing the serialized contents of OBJ. */
+    /**
+     * Returns a byte array containing the serialized contents of OBJ.
+     */
     static byte[] serialize(Serializable obj) {
         try {
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -227,14 +254,18 @@ class Utils {
 
     /* MESSAGES AND ERROR REPORTING */
 
-    /** Return a GitletException whose message is composed from MSG and ARGS as
-     *  for the String.format method. */
+    /**
+     * Return a GitletException whose message is composed from MSG and ARGS as
+     * for the String.format method.
+     */
     static GitletException error(String msg, Object... args) {
         return new GitletException(String.format(msg, args));
     }
 
-    /** Print a message composed from MSG and ARGS as for the String.format
-     *  method, followed by a newline. */
+    /**
+     * Print a message composed from MSG and ARGS as for the String.format
+     * method, followed by a newline.
+     */
     static void message(String msg, Object... args) {
         System.out.printf(msg, args);
         System.out.println();
@@ -247,24 +278,26 @@ class Utils {
 
     static Commit getCommitFromPointer(String PointerName) {
         if (PointerName.equals("HEAD")) {
-            PointerName = readObject(HEAD_FILE,String.class);
+            PointerName = readObject(HEAD_FILE, String.class);
         }
-        File CommitPointerFile = join(POINTERS_DIR,PointerName);
-        String readCommitSha1 = readObject(CommitPointerFile,String.class);
-        File readCommitFile = join(COMMIT_DIR,readCommitSha1);
-        return readObject(readCommitFile,Commit.class);
+        File CommitPointerFile = join(POINTERS_DIR, PointerName);
+        String readCommitSha1 = readObject(CommitPointerFile, String.class);
+        File readCommitFile = join(COMMIT_DIR, readCommitSha1);
+        return readObject(readCommitFile, Commit.class);
     }
+
     static void unstageAddStageFile(String toBeUnstagedFile) {
-        join(ADDSTAGE_DIR,toBeUnstagedFile).delete(); //unstage file in AddStage
+        join(ADDSTAGE_DIR, toBeUnstagedFile).delete(); //unstage file in AddStage
     }
+
     static void showCommitInfo(Commit toBeShowedCommit) {
         System.out.println("===");
         System.out.println("commit " + toBeShowedCommit.getCurSha1());
         if (toBeShowedCommit.isHasMutiplePars()) {
             // if this commit has multiple parents
-            System.out.print("Merge: " + toBeShowedCommit.getParSha1().substring(0,7));
+            System.out.print("Merge: " + toBeShowedCommit.getParSha1().substring(0, 7));
             for (String mergedInParSha1 : toBeShowedCommit.getMergedInParSha1s()) {
-                System.out.print(" " + mergedInParSha1.substring(0,7));
+                System.out.print(" " + mergedInParSha1.substring(0, 7));
             }
             System.out.println();
         }
@@ -276,7 +309,7 @@ class Utils {
     static void printBranches() {
         System.out.println("=== Branches ===");
         Commit curCommit = getCommitFromPointer("HEAD");
-        String curBranch = readObject(HEAD_FILE,String.class);
+        String curBranch = readObject(HEAD_FILE, String.class);
         System.out.println("*" + curBranch);
         if (!(plainFilenamesIn(POINTERS_DIR) == null)) {
             for (String Branch : plainFilenamesIn(POINTERS_DIR)) {
@@ -320,6 +353,7 @@ class Utils {
         System.out.println("=== Untracked Files ===");
         System.out.println();
     }
+
     // TODO:above two method needs to be completed
     static void clearTwoStages() {
         if (!(plainFilenamesIn(ADDSTAGE_DIR) == null)) {
@@ -333,6 +367,7 @@ class Utils {
             }
         }
     }
+
     static void IncorrectOperands() {
         System.out.println("Incorrect operands.");
         System.exit(0);
@@ -340,20 +375,21 @@ class Utils {
 
     /**
      * use DFS to iterate through the rootCommit and update the depthMap
-     * @param rootCommit  the start Commit which has not been put into the rooDepthMap
+     *
+     * @param rootCommit   the start Commit which has not been put into the rooDepthMap
      * @param rootDepthMap the DepthMap of root Commit
-     * @param curDepth the current depth of root Commit
+     * @param curDepth     the current depth of root Commit
      * @return
      */
-    static void changeDepthMapOf(Commit rootCommit, Map<String,Integer>rootDepthMap, int curDepth) {
+    static void changeDepthMapOf(Commit rootCommit, Map<String, Integer> rootDepthMap, int curDepth) {
         if (rootCommit.getParSha1().equals("")) {
             // base case : the rootCommit is the init commit
-            rootDepthMap.put(rootCommit.getCurSha1(),curDepth);
-            return ;
+            rootDepthMap.put(rootCommit.getCurSha1(), curDepth);
+            return;
         }
-        rootDepthMap.put(rootCommit.getCurSha1(),curDepth);
-        Commit firstParCommit = readObject(join(COMMIT_DIR,rootCommit.getParSha1()), Commit.class);
-        changeDepthMapOf(firstParCommit,rootDepthMap,curDepth + 1);
+        rootDepthMap.put(rootCommit.getCurSha1(), curDepth);
+        Commit firstParCommit = readObject(join(COMMIT_DIR, rootCommit.getParSha1()), Commit.class);
+        changeDepthMapOf(firstParCommit, rootDepthMap, curDepth + 1);
         if (rootCommit.isHasMutiplePars()) {
             for (String otherParCommitSha1 : rootCommit.getMergedInParSha1s()) {
                 Commit otherParCommit = readObject(join(COMMIT_DIR, otherParCommitSha1), Commit.class);
@@ -364,19 +400,20 @@ class Utils {
 
     /**
      * Iterate through two depthMap and find the splitCommit corresponding to minSumOfDistances
+     *
      * @param curCommitDepthMap
      * @param mergedInCommitDepthMap
      * @return
      */
-    static Commit findSplitCommit(Map<String,Integer>curCommitDepthMap,Map<String,Integer>mergedInCommitDepthMap) {
+    static Commit findSplitCommit(Map<String, Integer> curCommitDepthMap, Map<String, Integer> mergedInCommitDepthMap) {
         int minSumOfDistance = Integer.MAX_VALUE;
         String splitCommitSha1 = null;
-        for (Map.Entry<String,Integer> mergedInCommitDepthMapEntry : mergedInCommitDepthMap.entrySet()) {
+        for (Map.Entry<String, Integer> mergedInCommitDepthMapEntry : mergedInCommitDepthMap.entrySet()) {
             String iterateCommitSha1 = mergedInCommitDepthMapEntry.getKey();
             if (curCommitDepthMap.containsKey(iterateCommitSha1)) {
                 // i.e. the entry is the cross part Commit of two Maps
                 int iterateCommitSumOfDistances = curCommitDepthMap.get(iterateCommitSha1) + mergedInCommitDepthMap.get(iterateCommitSha1);
-                if  (iterateCommitSumOfDistances < minSumOfDistance) {
+                if (iterateCommitSumOfDistances < minSumOfDistance) {
                     minSumOfDistance = iterateCommitSumOfDistances;
                     splitCommitSha1 = iterateCommitSha1;
                 }
@@ -385,11 +422,10 @@ class Utils {
         if (splitCommitSha1 == null) {
             System.out.println("Something wrong occur,because we can't find the splitCommit!");
         }
-        return readObject(join(COMMIT_DIR,splitCommitSha1), Commit.class);
+        return readObject(join(COMMIT_DIR, splitCommitSha1), Commit.class);
     }
-    static void fixMergeConflict(boolean isIterBlobExistInCurCommit,boolean isIterBolbExistInMergedInCommit,
-                                 String curCommitBlobSha1, String mergedInCommitBlobSha1,String iterFileName,
-                                 Map<String,String> newMergeCommitContainingBlobs) {
+
+    static void fixMergeConflict(boolean isIterBlobExistInCurCommit, boolean isIterBolbExistInMergedInCommit, String curCommitBlobSha1, String mergedInCommitBlobSha1, String iterFileName, Map<String, String> newMergeCommitContainingBlobs) {
         // cur != mergedIn  merge conflict occur ( modified in different ways)
         System.out.println("Encountered a merge conflict.");
         // store conflict string in the file and create a blob storing this file content
@@ -405,7 +441,7 @@ class Utils {
         writeContents(solveMergeConfilctFile, "<<<<<<< HEAD\n" + curBlobFileContent + "=======\n" + mergedInBlobFileContent + ">>>>>>>\n");
         Blob mergeConlictBlob = new Blob(iterFileName, solveMergeConfilctFile);
         newMergeCommitContainingBlobs.put(iterFileName, mergeConlictBlob.getSha1());
-        writeObject(join(BLOB_DIR,mergeConlictBlob.getSha1()),mergeConlictBlob);
+        writeObject(join(BLOB_DIR, mergeConlictBlob.getSha1()), mergeConlictBlob);
     }
 
     public static void assertHasInitialedGitRepo() {

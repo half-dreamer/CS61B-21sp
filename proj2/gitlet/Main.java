@@ -1,13 +1,17 @@
 package gitlet;
+
 import static gitlet.Utils.*;
 
-/** Driver class for Gitlet, a subset of the Git version-control system.
- *  @author HalfDream
+/**
+ * Driver class for Gitlet, a subset of the Git version-control system.
+ *
+ * @author HalfDream
  */
 public class Main {
 
-    /** Usage: java gitlet.Main ARGS, where ARGS contains
-     *  <COMMAND> <OPERAND1> <OPERAND2> ... 
+    /**
+     * Usage: java gitlet.Main ARGS, where ARGS contains
+     * <COMMAND> <OPERAND1> <OPERAND2> ...
      */
     public static void main(String[] args) {
         if (args.length == 0) {
@@ -24,7 +28,6 @@ public class Main {
                 String addedFileName = args[1];
                 Repository.AddCommand(addedFileName);
                 break;
-            // TODO: FILL THE REST IN
             case "commit":    //usage : java gitlet.Main commit [message]
                 assertHasInitialedGitRepo();
                 if (args.length == 1) {
@@ -58,8 +61,8 @@ public class Main {
             case "checkout":
                 assertHasInitialedGitRepo();
                 if (args.length == 2) {
-                    String BranchName = args[1];
-                    Repository.checkoutToBranch(BranchName, false);
+                    String branchName = args[1];
+                    Repository.checkoutToBranch(branchName, false);
                     break;
                 }
                 if (args.length == 3) {
