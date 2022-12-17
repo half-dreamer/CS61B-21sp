@@ -5,8 +5,6 @@ import static gitlet.Utils.*;
  *  @author HalfDream
  */
 public class Main {
-    public static int BRANCH_COUNT = 1;
-    public static String[] Branches = new String[BRANCH_COUNT]; // Branches[0] is Master;
 
     /** Usage: java gitlet.Main ARGS, where ARGS contains
      *  <COMMAND> <OPERAND1> <OPERAND2> ... 
@@ -17,44 +15,52 @@ public class Main {
             System.exit(0);
         }
         String firstArg = args[0];
-        switch(firstArg) {
+        switch (firstArg) {
             case "init":
                 Repository.InitCommand();
                 break;
             case "add":
                 // note : we can only add one file to gitlet,so there are only two args in the input array.
+                assertHasInitialedGitRepo();
                 String addedFileName = args[1];
                 Repository.AddCommand(addedFileName);
                 break;
             // TODO: FILL THE REST IN
             case "commit":    //usage : java gitlet.Main commit [message]
+                assertHasInitialedGitRepo();
                 if (args.length == 1) {
-                    errorMessage("Please enter a commit message.");
+                    errorMessage("Please enter a commit message.\n");
                 }
                 String commitMessage = args[1];
                 Repository.CommitCommand(commitMessage);
                 break;
             case "rm":
+                assertHasInitialedGitRepo();
                 String rmFileName = args[1];
                 Repository.rmCommand(rmFileName);
                 break;
             case "log":
+                assertHasInitialedGitRepo();
                 Repository.logCommand();
                 break;
             case "global-log":
+                assertHasInitialedGitRepo();
                 Repository.globalLogCommand();
                 break;
             case "find":
+                assertHasInitialedGitRepo();
                 String findByMessage = args[1];
                 Repository.findCommand(findByMessage);
                 break;
             case "status":
+                assertHasInitialedGitRepo();
                 Repository.statusCommand();
                 break;
             case "checkout":
+                assertHasInitialedGitRepo();
                 if (args.length == 2) {
                     String BranchName = args[1];
-                    Repository.checkoutToBranch(BranchName,false);
+                    Repository.checkoutToBranch(BranchName, false);
                     break;
                 }
                 if (args.length == 3) {
@@ -71,25 +77,32 @@ public class Main {
                         IncorrectOperands();
                     }
                     String fileName = args[3];
-                    Repository.checkoutToSpecificCommitWithOneFile(commitSha1,fileName);
+                    Repository.checkoutToSpecificCommitWithOneFile(commitSha1, fileName);
                     break;
                 }
                 break;
             case "branch":
+                assertHasInitialedGitRepo();
                 String newBranchName = args[1];
                 Repository.branchCommand(newBranchName);
                 break;
             case "rm-branch":
+                assertHasInitialedGitRepo();
                 String rmBranchName = args[1];
                 Repository.rmBranchCommand(rmBranchName);
                 break;
             case "reset":
+                assertHasInitialedGitRepo();
                 String commitSha1 = args[1];
                 Repository.resetCommand(commitSha1);
                 break;
             case "merge":
+                assertHasInitialedGitRepo();
                 String mergedInBranchName = args[1];
                 Repository.mergeCommand(mergedInBranchName);
+                break;
+            default:
+                errorMessage("No command with that name exists.");
                 break;
         }
     }

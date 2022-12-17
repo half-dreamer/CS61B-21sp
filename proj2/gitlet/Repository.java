@@ -113,6 +113,9 @@ public class Repository {
         //  2.create the right newCommit with correct timestamp,parent etc.(done)
         //  3.write the newCommit to the Commits Folder.(done)
         //  4.update the branches(done)
+        if (CommitMessage.equals("")) {
+            error("Please enter a commit message.");
+        }
         Commit prevCommit = Utils.getCommitFromPointer("HEAD");
         String parSha1 = prevCommit.getCurSha1();
         Map<String,String> newCommitContainingBlobs = prevCommit.getContainingBlobs(); //not updated
@@ -372,13 +375,13 @@ public class Repository {
         Commit splitCommit = findSplitCommit(curCommitDepthMap, mergedInCommitDepthMap);
         // If the split point is the same commit as the given branch, then we do nothing;
         // the merge is complete, and the operation ends with the message Given branch is an ancestor of the current branch.
-        if (splitCommit.equals(mergedInBranchCommit)) {
+        if (splitCommit.getCurSha1().equals(mergedInBranchCommit.getCurSha1())) {
             System.out.println("Given branch is an ancestor of the current branch.");
             return;
         }
         // If the split point is the current branch, then the effect is to check out the given branch,
         // and the operation ends after printing the message Current branch fast-forwarded.
-        if (splitCommit.equals(curCommit)) {
+        if (splitCommit.getCurSha1().equals(curCommit.getCurSha1())) {
             checkoutToBranch(mergedInBranchName, false);
             System.out.println("Current branch fast-forwarded.");
         }

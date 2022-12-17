@@ -408,5 +408,11 @@ class Utils {
         writeObject(join(BLOB_DIR,mergeConlictBlob.getSha1()),mergeConlictBlob);
     }
 
+    public static void assertHasInitialedGitRepo() {
+        if (!GITLET_DIR.exists()) {
+            errorMessage("Not in an initialized Gitlet directory.");
+        }
+    }
+
 
 }
