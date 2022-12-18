@@ -246,11 +246,7 @@ public class Repository {
         Map<String, String> curCommitContaingBlobs = curCommit.getContainingBlobs();// Map<fileName,Blob.sha1> e.g.{"Hello.txt","0e93"}
         Map<String, String> desCommitContaingBlobs = desCommit.getContainingBlobs();
         List<String> untrackedFileNames = new ArrayList<>();
-        for (String workingFileName : plainFilenamesIn(CWD)) {
-            if (!curCommitContaingBlobs.containsKey(workingFileName)) {
-                untrackedFileNames.add(workingFileName);
-            }
-        }
+        addUntrackedFilesTo(untrackedFileNames);
         for (String untrackFileName : untrackedFileNames) {
             if (desCommitContaingBlobs.containsKey(untrackFileName)) {
                 System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
@@ -391,11 +387,7 @@ public class Repository {
         List<String> toDeleteFileList = new ArrayList<>();
 
         List<String> untrackedFileNames = new ArrayList<>();
-        for (String workingFileName : plainFilenamesIn(CWD)) {
-            if (!curCommitContainingBlobs.containsKey(workingFileName)) {
-                untrackedFileNames.add(workingFileName);
-            }
-        }
+        addUntrackedFilesTo(untrackedFileNames);
         if (!untrackedFileNames.isEmpty()) {
             errorMessage("There is an untracked file in the way; delete it, or add and commit it first.");
         }

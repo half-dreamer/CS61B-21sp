@@ -14,10 +14,7 @@ import java.nio.file.Paths;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import java.util.Formatter;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static gitlet.Repository.*;
 
@@ -60,7 +57,8 @@ class Utils {
                 result.format("%02x", b);
             }
             return result.toString();
-        } catch (NoSuchAlgorithmException excp) {
+        } catch (
+                NoSuchAlgorithmException excp) {
             throw new IllegalArgumentException("System does not support SHA-1");
         }
     }
@@ -149,7 +147,8 @@ class Utils {
                 }
             }
             str.close();
-        } catch (IOException | ClassCastException excp) {
+        } catch (IOException |
+                 ClassCastException excp) {
             throw new IllegalArgumentException(excp.getMessage());
         }
     }
@@ -164,7 +163,9 @@ class Utils {
             T result = expectedClass.cast(in.readObject());
             in.close();
             return result;
-        } catch (IOException | ClassCastException | ClassNotFoundException excp) {
+        } catch (IOException |
+                 ClassCastException |
+                 ClassNotFoundException excp) {
             throw new IllegalArgumentException(excp.getMessage());
         }
     }
@@ -343,15 +344,77 @@ class Utils {
         System.out.println();
     }
 
-    //TODO:these two print method needs to be completed
+    // Note : this methode do not print in lexicographical order , but in random order
+    // if you want to print in lexicographical order, sort the modifiedButNotStagedFilesMap.keySet() in lexi order
     static void printModifiedButNotStagedFiles() {
         System.out.println("=== Modifications Not Staged For Commit ===");
+        final String modified = "modified";
+        final String deleted = "deleted";
+        List<String> CWD_FileNames = plainFilenamesIn(CWD);
+        Map<String,String> modifiedButNotStagedFilesMap = new HashMap<>(); // <fileName,"deleted"/"modified">
+        //case 1:Tracked in the current commit, changed in the working directory, but not staged
+        Commit curCommit = getCommitFromPointer("HEAD");
+        Map<String, String> curCommitContainingBlobs = curCommit.getContainingBlobs();
+        for (Map.Entry<String,String> curCommitBlobEntry : curCommitContainingBlobs.entrySet()) {
+            String iterFileName = curCommitBlobEntry.getKey();
+            String iterFileBlobSha1 = curCommitBlobEntry.getValue();
+            String iterFileContentInCommit = readObject(join(BLOB_DIR,iterFileBlobSha1), Blob.class).getFileContent();
+            if (CWD_FileNames.contains(iterFileName)) {
+                if (!iterFileContentInCommit.equals(readContentsAsString(join(CWD,iterFileName)))) {
+                    modifiedButNotStagedFilesMap.put(iterFileName,modified);
+                }
+            }
+        }
+        // case 2:Staged for addition, but with different contents than in the working directory
+        // or Staged for addition, but deleted in the working directory
+        for (String iterFileName : plainFilenamesIn(ADDSTAGE_DIR)) {
+            String iterFileBlobSha1 = readContentsAsString(join(ADDSTAGE_DIR,iterFileName));
+            String iterFileContent = readObject(join(BLOB_DIR,iterFileBlobSha1),Blob.class).getFileContent();
+            if (CWD_FileNames.contains(iterFileName)) {
+                if (iterFileContent.equals(readContentsAsString(join(CWD,iterFileName)))) {
+                    modifiedButNotStagedFilesMap.put(iterFileName,modified);
+                }
+            } else {
+                modifiedButNotStagedFilesMap.put(iterFileName,deleted);
+            }
+        }
+        //case 3 :Not staged for removal, but tracked in the current commit and deleted from the working directory.
+        List<String> removedStageFileNames = plainFilenamesIn(RMSTAGE_DIR);
+        for (Map.Entry<String,String> curCommitBlobEntry : curCommitContainingBlobs.entrySet()) {
+            String iterFileName = curCommitBlobEntry.getKey();
+            String iterFileBlobSha1 = curCommitBlobEntry.getValue();
+            if (!removedStageFileNames.contains(iterFileName) && !CWD_FileNames.contains(iterFileName)) {
+                modifiedButNotStagedFilesMap.put(iterFileName,deleted);
+            }
+        }
+        for (Map.Entry<String,String> modifiedButNotStagedFileEntry : modifiedButNotStagedFilesMap.entrySet()) {
+            String fileName = modifiedButNotStagedFileEntry.getKey();
+            String modiOrDele = modifiedButNotStagedFileEntry.getValue();
+            System.out.println(fileName + " " + "(" + modiOrDele + ")");
+        }
         System.out.println();
     }
 
     static void printUntrackedFiles() {
         System.out.println("=== Untracked Files ===");
+        Commit curCommit = getCommitFromPointer("HEAD");
+        Map<String,String> curCommitContainingBlobs = curCommit.getContainingBlobs();
+        List<String> untrackedFileNames = new ArrayList<>();
+        addUntrackedFilesTo(untrackedFileNames);
+        for (String untrackedFileName : untrackedFileNames) {
+            System.out.println(untrackedFileName);
+        }
         System.out.println();
+    }
+
+    public static void addUntrackedFilesTo(List<String> untrackedFileNames) {
+        Commit curCommit = getCommitFromPointer("HEAD");
+        Map<String, String> curCommitContainingBlobs = curCommit.getContainingBlobs();
+        for (String workingFileName : plainFilenamesIn(CWD)) {
+            if (!curCommitContainingBlobs.containsKey(workingFileName)) {
+                untrackedFileNames.add(workingFileName);
+            }
+        }
     }
 
     // TODO:above two method needs to be completed
