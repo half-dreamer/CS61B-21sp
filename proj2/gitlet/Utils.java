@@ -368,10 +368,10 @@ class Utils {
         // case 2:Staged for addition, but with different contents than in the working directory
         // or Staged for addition, but deleted in the working directory
         for (String iterFileName : plainFilenamesIn(ADDSTAGE_DIR)) {
-            String iterFileBlobSha1 = readContentsAsString(join(ADDSTAGE_DIR,iterFileName));
+            String iterFileBlobSha1 = readObject(join(ADDSTAGE_DIR,iterFileName), StagedFile.class).blobSha1;
             String iterFileContent = readObject(join(BLOB_DIR,iterFileBlobSha1),Blob.class).getFileContent();
             if (CWD_FileNames.contains(iterFileName)) {
-                if (iterFileContent.equals(readContentsAsString(join(CWD,iterFileName)))) {
+                if (!iterFileContent.equals(readContentsAsString(join(CWD,iterFileName)))) {
                     modifiedButNotStagedFilesMap.put(iterFileName,modified);
                 }
             } else {
@@ -390,6 +390,9 @@ class Utils {
         for (Map.Entry<String,String> modifiedButNotStagedFileEntry : modifiedButNotStagedFilesMap.entrySet()) {
             String fileName = modifiedButNotStagedFileEntry.getKey();
             String modiOrDele = modifiedButNotStagedFileEntry.getValue();
+            if (fileName.equals("solveMergeConflictFile")) {
+                continue;
+            }
             System.out.println(fileName + " " + "(" + modiOrDele + ")");
         }
         System.out.println();
@@ -410,8 +413,18 @@ class Utils {
     public static void addUntrackedFilesTo(List<String> untrackedFileNames) {
         Commit curCommit = getCommitFromPointer("HEAD");
         Map<String, String> curCommitContainingBlobs = curCommit.getContainingBlobs();
+        List<String> addStageFileNamesList =  plainFilenamesIn(ADDSTAGE_DIR);
+        boolean isExistInAddStage = false;
         for (String workingFileName : plainFilenamesIn(CWD)) {
-            if (!curCommitContainingBlobs.containsKey(workingFileName)) {
+            if (workingFileName.equals("solveMergeConflictFile")) {
+                continue;
+            }
+            for (String addStageFileName : addStageFileNamesList) {
+                if (addStageFileName.equals(workingFileName)) {
+                    isExistInAddStage = true;
+                }
+            }
+            if (!curCommitContainingBlobs.containsKey(workingFileName) && !isExistInAddStage ) {
                 untrackedFileNames.add(workingFileName);
             }
         }
