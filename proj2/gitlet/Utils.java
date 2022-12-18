@@ -413,8 +413,13 @@ class Utils {
     public static void addUntrackedFilesTo(List<String> untrackedFileNames) {
         Commit curCommit = getCommitFromPointer("HEAD");
         Map<String, String> curCommitContainingBlobs = curCommit.getContainingBlobs();
+        List<String> curCommitContainingBlobFileNames = new ArrayList<>();
         List<String> addStageFileNamesList =  plainFilenamesIn(ADDSTAGE_DIR);
+        for (Map.Entry<String,String> entry : curCommitContainingBlobs.entrySet()) {
+            curCommitContainingBlobFileNames.add(entry.getKey());
+        }
         boolean isExistInAddStage = false;
+        boolean isExistInCurCommit = false;
         for (String workingFileName : plainFilenamesIn(CWD)) {
             if (workingFileName.equals("solveMergeConflictFile")) {
                 continue;
@@ -424,7 +429,12 @@ class Utils {
                     isExistInAddStage = true;
                 }
             }
-            if (!curCommitContainingBlobs.containsKey(workingFileName) && !isExistInAddStage ) {
+            for (String curCommitFileName : curCommitContainingBlobFileNames) {
+                if (curCommitFileName.equals(workingFileName)) {
+                    isExistInCurCommit = true;
+                }
+            }
+            if (!isExistInCurCommit && !isExistInAddStage ) {
                 untrackedFileNames.add(workingFileName);
             }
         }

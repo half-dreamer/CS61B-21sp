@@ -247,11 +247,24 @@ public class Repository {
         Map<String, String> desCommitContaingBlobs = desCommit.getContainingBlobs();
         List<String> untrackedFileNames = new ArrayList<>();
         addUntrackedFilesTo(untrackedFileNames);
+        if (!untrackedFileNames.isEmpty()) {
+            System.out.println(untrackedFileNames);
+        }
+
+        boolean willBeOverWrite = false;
         for (String untrackFileName : untrackedFileNames) {
-            if (desCommitContaingBlobs.containsKey(untrackFileName)) {
-                System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
-                System.exit(0);
+            for (Map.Entry<String,String> desCommitContainingBLobEntry : desCommitContaingBlobs.entrySet()) {
+                String iterDesCommitFileName = desCommitContainingBLobEntry.getKey();
+                if (untrackFileName.equals(iterDesCommitFileName)) {
+                    willBeOverWrite = true;
+                }
             }
+
+        }
+
+        if (willBeOverWrite) {
+            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+            System.exit(0);
         }
         //delete files tracked in curCommit but untracked in desCommit
         for (Map.Entry<String, String> entry : curCommitContaingBlobs.entrySet()) {
