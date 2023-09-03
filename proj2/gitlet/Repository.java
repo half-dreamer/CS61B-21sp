@@ -41,7 +41,7 @@ public class Repository {
      *          Blobs (folder)
      *                  >blob (file) (filename: blob.sha1, content: Blob(Object)
      *                  >blob (file)
-     *         CommitPointers(folder) (call it Branch may be better)
+     *         CommitPointers(folder)
      *                  >Commit(filename:Pointer Name, content: commit sha1 the pointer point at)
      *                  >e.g. note: Special case : filename:HEAD content : the branch name it currently points at
      *                  >e.g. (filename:master,content :some commit sha1)
@@ -49,8 +49,8 @@ public class Repository {
      *                  >StagedFile (fliename: added file name , content: StagedFile(Object) (which has pointed Blob's Sha1 )
      *         RmStage(folder)
      *                  >RmStagedFile (fliename: removed file name , content: StagedFile(Object) (which has pointed Blob's Sha1 )
-*/
 //  @formatter:on
+*/
     static void InitCommand() {
         if (GITLET_DIR.exists()) {
             errorMessage("A Gitlet version-control system already exists in the current directory.");
@@ -72,7 +72,7 @@ public class Repository {
     static void AddCommand(String AddedFileName) {
         // add a file:
         // 1.check whether the file(blob) is the same as HEAD commit containingBlobs
-        // 2.if same,don't add; otherwise,add it to the Stage(and now we know
+        // 2.if same,don't add ;otherwise,add it to the Stage(and now we know
         // StagedFile need three variables(1.the file content  2.the blob's sha1  3.the file name("world.txt")
         // So we create a new class called StagedFile to store these information)
         File AddedFile = join(CWD, AddedFileName);
@@ -109,7 +109,7 @@ public class Repository {
         //  2.create the right newCommit with correct timestamp,parent etc.(done)
         //  3.write the newCommit to the Commits Folder.(done)
         //  4.update the branches(done)
-        if (CommitMessage.length() == 0) {
+        if (CommitMessage.equals("")) {
             errorMessage("Please enter a commit message.");
         }
         Commit prevCommit = Utils.getCommitFromPointer("HEAD");
@@ -170,7 +170,6 @@ public class Repository {
              StagedFile RemovedStageFile = new StagedFile(rmFileName,join(CWD,rmFileName),rmBlob.getSha1());
              writeObject(rmStageFileDes,RemovedStageFile); // write it to the RmStage folder
              */
-
             //remove the file from the working directory if the user has not already done so
             restrictedDelete(join(CWD, rmFileName));
         } else {
@@ -233,7 +232,6 @@ public class Repository {
             System.out.println("No such branch exists.");
             System.exit(0);
         }
-
         Commit desCommit = readObject(join(COMMIT_DIR, desBranchCommitSha1), Commit.class);
         String curCommitSha1 = getCommitFromPointer("HEAD").getCurSha1();
         if (isUsedForReset) {
@@ -247,25 +245,16 @@ public class Repository {
         Map<String, String> curCommitContaingBlobs = curCommit.getContainingBlobs();// Map<fileName,Blob.sha1> e.g.{"Hello.txt","0e93"}
         Map<String, String> desCommitContaingBlobs = desCommit.getContainingBlobs();
         List<String> untrackedFileNames = new ArrayList<>();
-        addUntrackedFilesTo(untrackedFileNames);
-        if (!untrackedFileNames.isEmpty()) {
-            System.out.println(untrackedFileNames);
-        }
-
-        boolean willBeOverWrite = false;
-        for (String untrackFileName : untrackedFileNames) {
-            for (Map.Entry<String,String> desCommitContainingBLobEntry : desCommitContaingBlobs.entrySet()) {
-                String iterDesCommitFileName = desCommitContainingBLobEntry.getKey();
-                if (untrackFileName.equals(iterDesCommitFileName)) {
-                    willBeOverWrite = true;
-                }
+        for (String workingFileName : plainFilenamesIn(CWD)) {
+            if (!curCommitContaingBlobs.containsKey(workingFileName)) {
+                untrackedFileNames.add(workingFileName);
             }
-
         }
-
-        if (willBeOverWrite) {
-            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
-            System.exit(0);
+        for (String untrackFileName : untrackedFileNames) {
+            if (desCommitContaingBlobs.containsKey(untrackFileName)) {
+                System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                System.exit(0);
+            }
         }
         // delete files tracked in curCommit but untracked in desCommit
         for (Map.Entry<String, String> entry : curCommitContaingBlobs.entrySet()) {
@@ -378,7 +367,6 @@ public class Repository {
 
         Map<String, Integer> curCommitDepthMap = new HashMap<>();
         Map<String, Integer> mergedInCommitDepthMap = new HashMap<>();
-        // use depthMap to find (first) split commit
         changeDepthMapOf(curCommit, curCommitDepthMap, 0);
         changeDepthMapOf(mergedInBranchCommit, mergedInCommitDepthMap, 0);
         Commit splitCommit = findSplitCommit(curCommitDepthMap, mergedInCommitDepthMap);
@@ -402,7 +390,11 @@ public class Repository {
         List<String> toDeleteFileList = new ArrayList<>();
 
         List<String> untrackedFileNames = new ArrayList<>();
-        addUntrackedFilesTo(untrackedFileNames);
+        for (String workingFileName : plainFilenamesIn(CWD)) {
+            if (!curCommitContainingBlobs.containsKey(workingFileName)) {
+                untrackedFileNames.add(workingFileName);
+            }
+        }
         if (!untrackedFileNames.isEmpty()) {
             errorMessage("There is an untracked file in the way; delete it, or add and commit it first.");
         }
@@ -454,7 +446,6 @@ public class Repository {
                     // iter != cur   iter != mergedIn
                     if (!isIterBlobExistInCurCommit && !isIterBolbExistInMergedInCommit) {
                         //do nothing.
-                        ;
                     } else if (curCommitContainingBlobs.equals(mergedInCommitContainingBlobs)) {
                         // cur == mergedIn  (or say , modified in the same way )
                         newMergeCommitContainingBlobs.put(iterFileName, curCommitBlobSha1);
