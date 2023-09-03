@@ -41,7 +41,7 @@ public class Repository {
      *          Blobs (folder)
      *                  >blob (file) (filename: blob.sha1, content: Blob(Object)
      *                  >blob (file)
-     *         CommitPointers(folder)
+     *         CommitPointers(folder) (call it Branch may be better)
      *                  >Commit(filename:Pointer Name, content: commit sha1 the pointer point at)
      *                  >e.g. note: Special case : filename:HEAD content : the branch name it currently points at
      *                  >e.g. (filename:master,content :some commit sha1)
@@ -49,9 +49,8 @@ public class Repository {
      *                  >StagedFile (fliename: added file name , content: StagedFile(Object) (which has pointed Blob's Sha1 )
      *         RmStage(folder)
      *                  >RmStagedFile (fliename: removed file name , content: StagedFile(Object) (which has pointed Blob's Sha1 )
+*/
 //  @formatter:on
-
- /* TODO: fill in the rest of this class. */
     static void InitCommand() {
         if (GITLET_DIR.exists()) {
             errorMessage("A Gitlet version-control system already exists in the current directory.");
@@ -71,9 +70,9 @@ public class Repository {
     }
 
     static void AddCommand(String AddedFileName) {
-        //TODO: add a file:
-        //TODO: 1.check whether the file(blob) is the same as HEAD commit containingBlobs
-        //TODO: 2.if same,don't add ;otherwise,add it to the Stage(and now we know
+        // add a file:
+        // 1.check whether the file(blob) is the same as HEAD commit containingBlobs
+        // 2.if same,don't add; otherwise,add it to the Stage(and now we know
         // StagedFile need three variables(1.the file content  2.the blob's sha1  3.the file name("world.txt")
         // So we create a new class called StagedFile to store these information)
         File AddedFile = join(CWD, AddedFileName);
@@ -81,7 +80,7 @@ public class Repository {
             errorMessage("File does not exist.");
         }
 
-        //TODO:figure out whether the file (or say blob) have existed in the Blobs dir
+        // figure out whether the file (or say blob) have existed in the Blobs dir
         List<String> Bolbs = Utils.plainFilenamesIn(BLOB_DIR);
         Blob addedBlob = new Blob(AddedFileName, AddedFile);
         String addedBlobSha1 = addedBlob.getSha1();
@@ -89,8 +88,8 @@ public class Repository {
         File BlobFile = join(BLOB_DIR, addedBlobSha1);
         writeObject(BlobFile, addedBlob); // store the blob into blob file under the Blobs dir
 
-        // TODO:If the current working version of the file is identical to the version in the current commit,
-        //  do not stage it to be added, and remove it from the staging area if it is already there
+        // If the current working version of the file is identical to the version in the current commit,
+        // do not stage it to be added, and remove it from the staging area if it is already there
         Commit HEADCommit = Utils.getCommitFromPointer("HEAD");
         if (HEADCommit.getContainingBlobs().containsValue(addedBlob.getSha1())) {
             //meaning the addedBlob has existed in the HEAD commit.so do not stage it and remote it from the Staging area if it existed.
@@ -106,12 +105,12 @@ public class Repository {
 
 
     static void CommitCommand(String CommitMessage) {
-        // TODO: 1.copy the prevCommit containingBlobs to newCommit and adjust it with addStage.(done)
+        //  1.copy the prevCommit containingBlobs to newCommit and adjust it with addStage.(done)
         //  2.create the right newCommit with correct timestamp,parent etc.(done)
         //  3.write the newCommit to the Commits Folder.(done)
         //  4.update the branches(done)
-        if (CommitMessage.equals("")) {
-            error("Please enter a commit message.");
+        if (CommitMessage.length() == 0) {
+            errorMessage("Please enter a commit message.");
         }
         Commit prevCommit = Utils.getCommitFromPointer("HEAD");
         String parSha1 = prevCommit.getCurSha1();
@@ -155,7 +154,7 @@ public class Repository {
         if (isStaged) {
             unstageAddStageFile(rmFileName);
         } else if (isTracked) {
-            //Stage it for removal
+            // Stage it for removal
             Commit curCommit = getCommitFromPointer("HEAD");
             String rmBlobSha1 = curCommit.getContainingBlobs().get(rmFileName);
             Blob rmBlob = readObject(join(BLOB_DIR, rmBlobSha1), Blob.class);
@@ -171,6 +170,7 @@ public class Repository {
              StagedFile RemovedStageFile = new StagedFile(rmFileName,join(CWD,rmFileName),rmBlob.getSha1());
              writeObject(rmStageFileDes,RemovedStageFile); // write it to the RmStage folder
              */
+
             //remove the file from the working directory if the user has not already done so
             restrictedDelete(join(CWD, rmFileName));
         } else {
@@ -233,6 +233,7 @@ public class Repository {
             System.out.println("No such branch exists.");
             System.exit(0);
         }
+
         Commit desCommit = readObject(join(COMMIT_DIR, desBranchCommitSha1), Commit.class);
         String curCommitSha1 = getCommitFromPointer("HEAD").getCurSha1();
         if (isUsedForReset) {
@@ -266,14 +267,14 @@ public class Repository {
             System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
             System.exit(0);
         }
-        //delete files tracked in curCommit but untracked in desCommit
+        // delete files tracked in curCommit but untracked in desCommit
         for (Map.Entry<String, String> entry : curCommitContaingBlobs.entrySet()) {
             String curFileName = entry.getKey();
             if (!desCommitContaingBlobs.containsKey(curFileName)) {
                 restrictedDelete(join(CWD, curFileName));
             }
         }
-        //overwrite files tracked in the desCommit
+        // overwrite files tracked in the desCommit
         for (Map.Entry<String, String> entry : desCommitContaingBlobs.entrySet()) {
             String curBlobSha1 = entry.getValue();
             Blob curBlob = readObject(join(BLOB_DIR, curBlobSha1), Blob.class);
@@ -377,6 +378,7 @@ public class Repository {
 
         Map<String, Integer> curCommitDepthMap = new HashMap<>();
         Map<String, Integer> mergedInCommitDepthMap = new HashMap<>();
+        // use depthMap to find (first) split commit
         changeDepthMapOf(curCommit, curCommitDepthMap, 0);
         changeDepthMapOf(mergedInBranchCommit, mergedInCommitDepthMap, 0);
         Commit splitCommit = findSplitCommit(curCommitDepthMap, mergedInCommitDepthMap);
@@ -452,6 +454,7 @@ public class Repository {
                     // iter != cur   iter != mergedIn
                     if (!isIterBlobExistInCurCommit && !isIterBolbExistInMergedInCommit) {
                         //do nothing.
+                        ;
                     } else if (curCommitContainingBlobs.equals(mergedInCommitContainingBlobs)) {
                         // cur == mergedIn  (or say , modified in the same way )
                         newMergeCommitContainingBlobs.put(iterFileName, curCommitBlobSha1);
